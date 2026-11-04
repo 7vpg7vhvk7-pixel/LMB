@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=JetBrains+Mono:wght@500;700;800&family=Manrope:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--lime:#D4FF3F;--red:#FF3B4E;--amber:#FFB547}
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:1080px;height:1920px;overflow:hidden;background:#000}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#000}
+.cam{position:absolute;inset:0;transform-origin:50% 52%}
+.F{position:absolute;inset:0;overflow:hidden;color:#fff;font-family:Manrope;
+ background:radial-gradient(90% 60% at 50% 48%,#121722 0%,#080A0F 55%,#030406 100%)}
+svg.L{position:absolute;left:0;top:0}
+.T{position:absolute;left:0;right:0;text-align:center;z-index:5}
+.w{position:relative;display:inline-block;font-family:Unbounded;font-weight:900;text-transform:uppercase;letter-spacing:-.025em;line-height:.98;white-space:nowrap;
+ text-shadow:-3px 0 rgba(255,40,90,.55),3px 0 rgba(60,230,255,.5),0 0 40px rgba(255,255,255,.18)}
+.w .gh{position:absolute;left:0;top:0;white-space:nowrap;filter:blur(7px);opacity:.22;text-shadow:none}
+.w .gh2{opacity:.09;filter:blur(14px)}
+.blk{display:inline-block;background:var(--lime);color:#07080a;font-family:Unbounded;font-weight:900;text-transform:uppercase;letter-spacing:-.02em;white-space:nowrap;
+ padding:.12em .32em .1em;border-radius:.16em;box-shadow:0 0 70px rgba(212,255,63,.55),.12em .12em 0 rgba(212,255,63,.28);text-shadow:none}
+.br{position:relative;display:inline-block;color:var(--lime);padding:.02em .16em;text-shadow:0 0 28px rgba(212,255,63,.8)}
+.br.red{color:var(--red);text-shadow:0 0 28px rgba(255,59,78,.8)}
+.br i{position:absolute;width:22px;height:22px;border:5px solid currentColor}
+.br b{position:absolute;width:14px;height:14px;background:#fff;border:3px solid currentColor;right:-14px;top:-14px}
+.m{font-family:'JetBrains Mono';font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.sm{font-family:Unbounded;font-weight:800;text-transform:uppercase;letter-spacing:.02em}
+.hud{position:absolute;inset:0;z-index:30;font-family:'JetBrains Mono';font-weight:700;font-size:21px;letter-spacing:.06em;color:rgba(255,255,255,.62);text-transform:uppercase}
+.hud .p{position:absolute;white-space:nowrap}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--red);margin-right:10px;box-shadow:0 0 12px var(--red)}
+.chip{position:absolute;z-index:6;font-family:'JetBrains Mono';font-weight:700;font-size:24px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;
+ padding:12px 18px;border:2px solid rgba(212,255,63,.75);background:rgba(8,10,12,.78);color:#fff}
+.chip em{font-style:normal;color:var(--lime)}
+.cap{position:absolute;left:80px;right:80px;top:1650px;z-index:7;text-align:center;font-family:'JetBrains Mono';font-weight:700;font-size:27px;line-height:1.45;color:rgba(255,255,255,.9);text-transform:uppercase;letter-spacing:.04em}
+.cap span{background:rgba(5,6,8,.72);padding:4px 10px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.cur{display:inline-block;width:.6em;height:1em;background:var(--lime);vertical-align:-.12em;margin-left:4px}
+.over{position:absolute;inset:0;pointer-events:none}
+</style></head><body><div id="stage"></div>
+<script>
+// ===== утилиты =====
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const P=(t,a,b)=>clamp((t-a)/(b-a));
+const eo=x=>1-Math.pow(1-x,3);
+const ex=x=>x>=1?1:1-Math.pow(2,-10*x);
+const eb=x=>{const c1=1.9,c3=c1+1;return x<=0?0:1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+const eio=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const fr=x=>x-Math.floor(x);
+const H=k=>fr(Math.sin(k*12.9898+78.233)*43758.5453);
+const pad=(n,l=2)=>String(Math.floor(n)).padStart(l,'0');
+
+const SC=[[0,5],[5,11],[11,19],[19,25],[25,31],[31,37],[37,45],[45,53],[53,56.5],[56.5,60]];
+const NAMES=['НЕТ СИЛ','КРОВОТОК','МИТОХОНДРИИ','СТРЕСС','МИТО-ПАСПОРТ','ЗАБОР КРОВИ','МИКРОСКОП','ОТЧЁТ','ПЛАН','LOVE MY BODY'];
+const TOPS=['СКАНИРОВАНИЕ · ОРГАНИЗМ · ЭНЕРГИЯ','ГЛУБИНА ▸ КРОВОТОК · СКОРОСТЬ 0.3 М/С','ОБЪЕКТИВ ×1000 · КЛЕТКА · ЭНЕРГООБМЕН','ВНИМАНИЕ · СВОБОДНЫЕ РАДИКАЛЫ · ВОСПАЛЕНИЕ','MITO-ID · ИММУНИТЕТ × ЭНЕРГИЯ','ЗАБОР ОБРАЗЦА · 1 ПРОБИРКА · 5 МИНУТ','ЛАБОРАТОРИЯ · МАЗОК КРОВИ · ×1000','РЕЗУЛЬТАТ · РАЗБОР С ВРАЧОМ','ПЕРСОНАЛЬНЫЙ ПОДХОД','КОНЕЦ ЗАПИСИ · LOVE MY BODY'];
+const SHAKES=[[25+1.6,.9],[31+.1,.4],[56.5+.05,.6],[19+.2,.5],[37+.05,.3],[45+.5,.5]];
+
+// ===== текстовые эффекты =====
+function W(txt,size,p,extra=''){
+ const e=ex(clamp(p)),x=(1-e)*520,tr=(1-e)*300,sk=(1-e)*-14,op=clamp(p*4);
+ return `<span class="w" style="font-size:${size}px;opacity:${op};transform:translateX(${x}px) skewX(${sk}deg);${extra}"><span class="gh" style="transform:translateX(${-46+tr*.5}px)">${txt}</span><span class="gh gh2" style="transform:translateX(${-110+tr}px)">${txt}</span>${txt}</span>`}
+function BLK(txt,size,p,red){const e=eb(clamp(p)),op=clamp(p*5);
+ return `<span class="blk" style="font-size:${size}px;opacity:${op};transform:scale(${Math.max(0,e)}) rotate(${-2.2-(1-clamp(p))*14}deg);${red?'background:#FF3B4E;color:#fff;box-shadow:0 0 70px rgba(255,59,78,.6)':''}">${txt}</span>`}
+function BR(txt,size,p,red){const e=eo(clamp(p)),o=(1-e)*60,op=clamp(p*3),c=clamp((p-.25)*2);
+ const cs=[`left:${-6-o}px;top:${-6-o}px;border-right:0;border-bottom:0`,`right:${-6-o}px;top:${-6-o}px;border-left:0;border-bottom:0`,`left:${-6-o}px;bottom:${-6-o}px;border-right:0;border-top:0`,`right:${-6-o}px;bottom:${-6-o}px;border-left:0;border-top:0`];
+ return `<span class="w" style="font-size:${size}px;opacity:${op}"><span class="br ${red?'red':''}" style="background:rgba(${red?'255,59,78':'212,255,63'},${.1*c})">${cs.map(s=>`<i style="${s}"></i>`).join('')}<b style="opacity:${c}"></b><span style="opacity:${c};filter:blur(${(1-c)*10}px)">${txt}</span></span></span>`}
+function TY(txt,p){const n=Math.round(txt.length*clamp(p));return txt.slice(0,n)}
+function CAP(txt,t,a=1.1,dur=1.6){if(t<a)return '';const p=P(t,a,a+dur),blink=(Math.floor(t*3)%2===0)||p<1;
+ return `<div class="cap"><span>${TY(txt,p)}${blink?'<i class="cur"></i>':''}</span></div>`}
+function CHIP(html,plain,t,a,style,red){if(t<a)return '';const p=P(t,a,a+.5),e=eo(p);
+ return `<div class="chip" style="${style};clip-path:inset(0 ${(1-e)*100}% 0 0);${red?'border-color:#FF3B4E':''}">${html}</div>`}
+
+// ===== графика =====
+const DEFS=`<defs>
+<radialGradient id="rbc" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#5e0614"/><stop offset=".5" stop-color="#a3122a"/><stop offset=".82" stop-color="#ff3d55"/><stop offset=".93" stop-color="#ff8090"/><stop offset="1" stop-color="#ff8090" stop-opacity="0"/></radialGradient>
+<radialGradient id="cyto" cx="50%" cy="45%" r="55%"><stop offset="0" stop-color="#1d3b52" stop-opacity=".9"/><stop offset=".75" stop-color="#0f2233" stop-opacity=".85"/><stop offset="1" stop-color="#3fa7c9" stop-opacity=".55"/></radialGradient>
+<radialGradient id="cytoR" cx="50%" cy="45%" r="55%"><stop offset="0" stop-color="#3a1424" stop-opacity=".9"/><stop offset=".75" stop-color="#22101a" stop-opacity=".85"/><stop offset="1" stop-color="#c93f5a" stop-opacity=".55"/></radialGradient>
+<radialGradient id="nuc" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#b58cff"/><stop offset=".6" stop-color="#5a2fb0"/><stop offset="1" stop-color="#2a1260"/></radialGradient>
+<linearGradient id="mito" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFC27A"/><stop offset=".45" stop-color="#FF7A59"/><stop offset="1" stop-color="#E0365A"/></linearGradient>
+<linearGradient id="mitoIn" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a6b"/><stop offset="1" stop-color="#8f1d3e"/></linearGradient>
+<linearGradient id="mitoG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c8794"/><stop offset="1" stop-color="#3a3f4a"/></linearGradient>
+<radialGradient id="spark"><stop offset="0" stop-color="#fff"/><stop offset=".25" stop-color="#FFE29A"/><stop offset="1" stop-color="#FFB547" stop-opacity="0"/></radialGradient>
+<radialGradient id="rad"><stop offset="0" stop-color="#fff"/><stop offset=".25" stop-color="#ff3b4e"/><stop offset="1" stop-color="#ff3b4e" stop-opacity="0"/></radialGradient>
+<radialGradient id="smear" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#f6e9f1"/><stop offset=".8" stop-color="#e3c8da"/><stop offset="1" stop-color="#b996b0"/></radialGradient>
+<linearGradient id="scanG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D4FF3F" stop-opacity="0"/><stop offset=".85" stop-color="#D4FF3F" stop-opacity=".2"/><stop offset="1" stop-color="#D4FF3F" stop-opacity=".65"/></linearGradient>
+<linearGradient id="blood" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5e0614"/><stop offset=".5" stop-color="#c8193a"/><stop offset="1" stop-color="#5e0614"/></linearGradient>
+<linearGradient id="glass" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".2" stop-color="#fff" stop-opacity=".05"/><stop offset=".8" stop-color="#fff" stop-opacity=".03"/><stop offset="1" stop-color="#fff" stop-opacity=".2"/></linearGradient>
+<filter id="glowS" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<filter id="soft"><feGaussianBlur stdDeviation="2"/></filter>
+<filter id="b6" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+<filter id="b16" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
+<filter id="b30" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="30"/></filter>
+<filter id="mblur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3 20"/></filter>
+</defs>`;
+function rbc(x,y,r,rot,f,op=1){return `<g transform="translate(${x},${y}) rotate(${rot}) scale(1,.8)" ${f?`filter="url(#${f})"`:''} opacity="${op}"><circle r="${r}" fill="url(#rbc)"/><ellipse cx="${-r*.1}" cy="${-r*.12}" rx="${r*.4}" ry="${r*.33}" fill="#4a0410" opacity=".55"/><path d="M${-r*.75} ${-r*.35} A${r*.82} ${r*.82} 0 0 1 ${r*.3} ${-r*.76}" stroke="#ffb3bd" stroke-width="${r*.06}" fill="none" opacity=".55" stroke-linecap="round"/></g>`}
+function mito(x,y,s,rot,grey,op=1){const w=150,h=60;let d=`M${-w+28} 0`;const n=10,st=(2*w-56)/n;for(let k=0;k<n;k++){const xx=-w+28+k*st,yy=k%2?44:-44;d+=` C${xx+st*.1} ${yy},${xx+st*.4} ${yy},${xx+st*.5} ${yy} S${xx+st*.9} 0,${xx+st} 0`}
+ return `<g transform="translate(${x},${y}) rotate(${rot}) scale(${s})" opacity="${op}" ${grey?'':'filter="url(#glowS)"'}>
+ ${grey?'':`<ellipse rx="${w+30}" ry="${h+30}" fill="#FF7A59" opacity=".35" filter="url(#b16)"/>`}
+ <ellipse rx="${w}" ry="${h}" fill="url(#${grey?'mitoG':'mito'})" stroke="${grey?'#9aa3ad':'#FFE0BD'}" stroke-width="4"/>
+ <ellipse rx="${w-14}" ry="${h-13}" fill="${grey?'#2c3038':'url(#mitoIn)'}"/>
+ <path d="${d}" fill="none" stroke="${grey?'#8a929c':'#FFE6C9'}" stroke-width="6" stroke-linecap="round"/>
+ <ellipse cx="${-w*.3}" cy="${-h*.55}" rx="${w*.45}" ry="${h*.14}" fill="#fff" opacity="${grey?.08:.25}"/></g>`}
+function sparksA(cx,cy,n,sp,t,sd,rate=.45,amp=1){let o='';for(let k=0;k<n;k++){const ph=H(k+sd),a=H(k*3.1+sd)*6.283,f=fr(t*rate+ph),d=sp*(.15+f*.95),r=(5+H(k*7+sd)*14)*amp;
+ o+=`<circle cx="${cx+Math.cos(a)*d}" cy="${cy+Math.sin(a)*d}" r="${r}" fill="url(#spark)" opacity="${Math.sin(Math.PI*f)}"/>`}return o}
+function dust(n,col,t,sd,maxr=4,vy=-12){let o='';for(let k=0;k<n;k++){const x=H(k+sd)*1080+Math.sin(t*.5+k)*10,y=fr(H(k*2+sd)+t*vy/1920)*1920;o+=`<circle cx="${x}" cy="${y}" r="${1+H(k*5+sd)*maxr}" fill="${col}" opacity="${.15+H(k*9+sd)*.5}"/>`}return o}
+function cell(cx,cy,R,t,red){
+ const col=red?'#ff8b9a':'#9fe6ff',col2=red?'#ff8b9a':'#bff1ff';
+ let mem='';for(let k=0;k<150;k++){const a=k/150*6.283+t*.06;mem+=`<circle cx="${cx+Math.cos(a)*R}" cy="${cy+Math.sin(a)*R}" r="5" fill="${col}" opacity=".8"/>`}
+ let er='';for(let k=0;k<5;k++){const y=cy+110+k*22,ph=Math.sin(t*1.2+k)*6;er+=`<path d="M${cx-60} ${y+ph} q 30 -18 60 0 t 60 0 t 60 0 t 60 0" stroke="${red?'#c95a72':'#5fc6e6'}" stroke-width="5" fill="none" opacity=".35"/>`}
+ let ves='';for(let k=0;k<22;k++){const a=H(k+40)*6.283+t*.05*(k%2?1:-1),d=R*(.2+H(k+90)*.7);ves+=`<circle cx="${cx+Math.cos(a)*d}" cy="${cy+Math.sin(a)*d}" r="${5+H(k+7)*12}" fill="none" stroke="${red?'#ff9aa8':'#8fe9ff'}" stroke-width="3" opacity=".3"/>`}
+ const nb=1+Math.sin(t*2)*.015;
+ return `<circle cx="${cx}" cy="${cy}" r="${R+60}" fill="${red?'#ff3b4e':'#3fb4ff'}" opacity=".16" filter="url(#b30)"/>
+ <circle cx="${cx}" cy="${cy}" r="${R}" fill="url(#${red?'cytoR':'cyto'})"/>
+ <circle cx="${cx}" cy="${cy}" r="${R+9}" fill="none" stroke="${col2}" stroke-width="3" opacity=".6"/>
+ <circle cx="${cx}" cy="${cy}" r="${R-9}" fill="none" stroke="${col2}" stroke-width="3" opacity=".45"/>${mem}${er}${ves}
+ <g transform="translate(${cx+60},${cy+30}) scale(${nb})"><circle r="125" fill="url(#nuc)" opacity="${red?.55:1}" ${red?'':'filter="url(#glowS)"'}/>
+ <circle cx="30" cy="-20" r="34" fill="#e6d4ff" opacity=".55"/></g>`}
+function callout(x,y,lx,ly,p,col='#D4FF3F'){if(p<=0)return '';const ex2=lx+(lx>x?60:-60);
+ return `<g><circle cx="${x}" cy="${y}" r="${10+ (1-p)*30}" fill="none" stroke="${col}" stroke-width="3" opacity="${p}"/><circle cx="${x}" cy="${y}" r="3" fill="${col}"/>
+ <polyline points="${x},${y} ${lx},${ly} ${ex2},${ly}" fill="none" stroke="${col}" stroke-width="2.5" pathLength="1" stroke-dasharray="1" stroke-dashoffset="${1-eo(p)}"/></g>`}
+function granulo(x,y,r,sd){let g='';for(let k=0;k<45;k++){const a=H(k+sd)*6.283,d=H(k*3+sd)*r*.85;g+=`<circle cx="${Math.cos(a)*d}" cy="${Math.sin(a)*d}" r="${2+H(k*5+sd)*3}" fill="#b874a6" opacity=".75"/>`}
+ return `<g transform="translate(${x},${y}) rotate(${H(sd)*360})"><circle r="${r}" fill="#efd3e5" stroke="#cf9ec1" stroke-width="3"/>${g}<g fill="#6b2283" filter="url(#soft)">
+ <ellipse cx="${-r*.4}" cy="${-r*.1}" rx="${r*.26}" ry="${r*.2}"/><ellipse cx="${r*.04}" cy="${r*.24}" rx="${r*.25}" ry="${r*.19}"/><ellipse cx="${r*.43}" cy="${-r*.18}" rx="${r*.22}" ry="${r*.18}"/>
+ <path d="M${-r*.4} ${-r*.1} Q${-r*.16} ${r*.28} ${r*.04} ${r*.24} Q${r*.3} ${r*.1} ${r*.43} ${-r*.18}" stroke="#6b2283" stroke-width="${r*.09}" fill="none"/></g></g>`}
+function gauge(cx,cy,r,p,col,label,val,rot=0){return `<g><circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(0,0,0,.35)" stroke="rgba(255,255,255,.14)" stroke-width="14"/>
+ <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="14" stroke-linecap="round" stroke-dasharray="${2*Math.PI*r*clamp(p)} 9999" transform="rotate(-90 ${cx} ${cy})" style="filter:drop-shadow(0 0 16px ${col})"/>
+ <g transform="rotate(${rot} ${cx} ${cy})">${Array.from({length:60},(_,k)=>{const a=k/60*6.283;return `<line x1="${cx+Math.cos(a)*(r+20)}" y1="${cy+Math.sin(a)*(r+20)}" x2="${cx+Math.cos(a)*(r+(k%5?28:40))}" y2="${cy+Math.sin(a)*(r+(k%5?28:40))}" stroke="rgba(255,255,255,${k%5?.3:.6})" stroke-width="2"/>`}).join('')}</g>
+ ${label?`<text x="${cx}" y="${cy-r*.32}" text-anchor="middle" font-family="JetBrains Mono" font-weight="700" font-size="${r*.14}" fill="rgba(255,255,255,.6)" letter-spacing="3">${label}</text>
+ <text x="${cx}" y="${cy+r*.2}" text-anchor="middle" font-family="JetBrains Mono" font-weight="800" font-size="${r*.48}" fill="#fff">${val}</text>`:''}</g>`}
+
+// ===== HUD =====
+function hud(i,T,col='#D4FF3F'){
+ const rem=Math.max(0,60-T),fn=Math.floor(T*30);
+ const ticks=Array.from({length:61},(_,k)=>`<line x1="${70+k*15.67}" y1="${k%5?1818:1808}" x2="${70+k*15.67}" y2="1828" stroke="rgba(255,255,255,${k%5?.25:.5})" stroke-width="2"/>`).join('');
+ const r=52,cx=966,cy=232;
+ const ring=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(0,0,0,.4)" stroke="rgba(255,255,255,.18)" stroke-width="3"/>
+  <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${2*Math.PI*r*rem/60} 9999" transform="rotate(-90 ${cx} ${cy})" style="filter:drop-shadow(0 0 10px ${col})"/>
+  ${Array.from({length:24},(_,k)=>{const a=k/24*6.283;return `<line x1="${cx+Math.cos(a)*(r+12)}" y1="${cy+Math.sin(a)*(r+12)}" x2="${cx+Math.cos(a)*(r+(k%6?18:26))}" y2="${cy+Math.sin(a)*(r+(k%6?18:26))}" stroke="rgba(255,255,255,.4)" stroke-width="2"/>`}).join('')}`;
+ const cross=(x,y)=>`<g transform="translate(${x},${y})" stroke="rgba(255,255,255,.7)" stroke-width="2.5" fill="none"><circle r="16"/><line x1="-28" y1="0" x2="-8" y2="0"/><line x1="8" y1="0" x2="28" y2="0"/><line x1="0" y1="-28" x2="0" y2="-8"/><line x1="0" y1="8" x2="0" y2="28"/><circle r="3" fill="#fff"/></g>`;
+ const corner=(x,y,sx,sy)=>`<path d="M${x} ${y+sy*44} L${x} ${y} L${x+sx*44} ${y}" stroke="rgba(255,255,255,.55)" stroke-width="3" fill="none"/>`;
+ const c1x=150+Math.sin(T*.7)*40+H(i)*700,c1y=900+Math.cos(T*.5)*120+H(i+3)*500;
+ const blinkRec=Math.floor(T*2)%2===0;
+ const prog=T/60*940;
+ return `<div class="hud"><svg class="L" width="1080" height="1920">
+  ${corner(40,40,1,1)}${corner(1040,40,-1,1)}${corner(40,1880,1,-1)}${corner(1040,1880,-1,-1)}
+  <line x1="70" y1="1818" x2="1010" y2="1818" stroke="rgba(255,255,255,.22)" stroke-width="2"/>${ticks}
+  <rect x="70" y="1790" width="${prog}" height="5" fill="${col}"/><rect x="${70+prog-2}" y="1780" width="4" height="54" fill="#fff"/>
+  ${ring}${cross(clamp(c1x,90,990),clamp(c1y,700,1600))}
+  <g fill="rgba(255,255,255,.35)">${Array.from({length:9},(_,k)=>`<rect x="58" y="${820+k*26}" width="${k%3?10:22}" height="3"/>`).join('')}<rect x="52" y="${820+fr(T*.3)*208}" width="30" height="4" fill="${col}"/></g>
+ </svg>
+ <div class="p" style="left:70px;top:72px"><span class="dot" style="opacity:${blinkRec?1:.25}"></span>ЗАП 00:00:${pad(T)}:${pad(fn%30)}</div>
+ <div class="p" style="left:0;right:0;top:124px;text-align:center;font-size:18px;opacity:.75">${TOPS[i]}</div>
+ <div class="p" style="left:922px;top:216px;width:88px;text-align:center;font-size:24px;color:#fff;font-weight:800">00:${pad(Math.ceil(rem-.001))}</div>
+ <div class="p" style="left:910px;top:300px;width:112px;text-align:center;font-size:15px">осталось</div>
+ <div class="p" style="right:70px;top:74px">КАДР ${pad(fn,4)} / 1800</div>
+ <div class="p" style="left:70px;top:1748px">${pad(i+1)} / 10 — ${NAMES[i]}</div>
+ <div class="p" style="right:70px;top:1748px">1080 × 1920 · 30 К/С</div>
+ <div class="p" style="left:70px;top:1846px;font-size:17px;opacity:.6">LOVE MY BODY · INTEGRATIVE CLINIC</div>
+ <div class="p" style="right:70px;top:1846px;font-size:17px;opacity:.6">СЕРИЯ MITO-ID</div></div>`}
+
+// ===== сцены =====
+const S=[];
+S[0]=(t)=>{const v=lerp(100,12,eio(P(t,.3,2.6))),col=v>35?'#D4FF3F':'#FF3B4E',pul=v<35?.75+.25*Math.sin(t*12):1;
+ let bg='';[[120,520,150,20,'b16',.6],[980,1320,190,-30,'b30',.4],[160,1500,120,40,'b16',.5],[860,400,90,10,'b6',.3]].forEach((c,k)=>bg+=rbc(c[0]+Math.sin(t*.6+k)*20,c[1]-t*(18+k*6),c[2],c[3]+t*5,c[4]));
+ return `<svg class="L" width="1080" height="1920">${DEFS}${bg}${dust(80,'#fff',t,1,3)}
+ <g opacity="${pul}">${gauge(540,1010,215,v/100,col,'ЭНЕРГИЯ',Math.round(v)+'%',t*8)}</g></svg>
+ <div class="T" style="top:400px">${W('Нет сил?',140,P(t,.15,.75))}</div>
+ <div class="T" style="top:600px"><span class="sm" style="font-size:38px;opacity:${P(t,1,1.4)}">${TY('даже после 8 часов сна',P(t,1,1.8)).replace('8 часов','<span style="color:var(--lime)">8 часов</span>')}</span></div>
+ <div class="T" style="top:1340px">${W('<span style="font-size:46px;font-weight:800">ответ скрыт</span>',46,P(t,2.7,3.1),'font-weight:800')}</div>
+ <div class="T" style="top:1420px">${BLK('в клетках',96,P(t,3.1,3.6))}</div>`};
+
+S[1]=(t,d)=>{let s='';for(let k=0;k<26;k++){const sp=.5+H(k+5)*1.2,y=fr(H(k+11)+t*sp*.12)*2300-200,x=H(k+21)*1080+Math.sin(t+k)*30,r=50+H(k+31)*120;s+=rbc(x,y,r,H(k)*360+t*20*(k%2?1:-1),k%3?'mblur':'b6',.85)}
+ const cs=lerp(.75,1.12,eio(t/d));
+ return `<svg class="L" width="1080" height="1920">${DEFS}<rect width="1080" height="1920" fill="#2a0610" opacity=".55"/>${s}
+ <g transform="translate(540,1060) scale(${cs}) rotate(${t*6})">${rbc(0,0,250,10)}</g>
+ ${callout(640,980,820,820,P(t,1.6,2.1))}</svg>
+ ${CHIP('<em>●</em> RBC · 7.5µm','',t,2.0,'left:700px;top:790px')}
+ <div class="T" style="top:370px">${W('Заходим',130,P(t,.15,.7))}</div>
+ <div class="T" style="top:530px">${BR('внутрь',130,P(t,.55,1.2))}</div>
+ <div class="T" style="top:1420px">${W('клетки',130,P(t,1.0,1.5))}</div>
+ ${CAP('Внутри вас — триллионы клеток',t,2.4,1.2)}`};
+
+function cellScene(t,red,appear){const cx=540,cy=1080,ap=appear?eo(P(t,0,1)):1;
+ const m=[[-170,-190,.95,-22],[150,-200,.62,28],[-210,170,.7,32],[200,250,.55,-35]];
+ const ms=(grey,op)=>m.map((q,k)=>mito(cx+q[0]+Math.sin(t*1.3+k)*8,cy+q[1]+Math.cos(t*1.1+k)*6,q[2],q[3]+Math.sin(t*.9+k*2)*6,grey,op)).join('');
+ return {cx,cy,ap,ms}}
+S[2]=(t)=>{const {cx,cy,ap,ms}=cellScene(t,0,1);const atp=Math.round(96*eo(P(t,2.6,3.8)));
+ return `<svg class="L" width="1080" height="1920">${DEFS}${dust(70,'#8fe9ff',t,3,3)}
+ <g opacity="${clamp(ap*1.5)}" transform="translate(${cx},${cy}) scale(${lerp(.82,1,ap)}) translate(${-cx},${-cy})">${cell(cx,cy,410,t)}${ms(0,1)}
+ ${sparksA(cx-170,cy-190,26,260,t,1)}${sparksA(cx+150,cy-200,10,160,t,2)}${sparksA(cx-210,cy+170,12,170,t,3)}${sparksA(cx+200,cy+250,8,130,t,4)}</g>
+ ${callout(cx-170,cy-190,170,640,P(t,1.6,2.1))}${callout(cx-210,cy+170,170,1550,P(t,2.3,2.8))}${callout(cx+60,cy+30,900,1500,P(t,3.0,3.5))}</svg>
+ ${CHIP('<em>MT-01</em> · МИТОХОНДРИЯ','',t,2.0,'left:60px;top:600px')}
+ ${CHIP(`<em>АТФ ▲</em> ВЫРАБОТКА ${atp}%`,'',t,2.7,'left:60px;top:1540px')}
+ ${CHIP('<em>NUC</em> · ЯДРО','',t,3.4,'left:760px;top:1450px')}
+ <div class="T" style="top:340px">${W('Митохондрии',84,P(t,.3,.9))}</div>
+ <div class="T" style="top:460px">${BLK('электростанции клетки',52,P(t,.9,1.4))}</div>
+ ${CAP('Производят АТФ — энергию для мозга, сердца и иммунитета',t,4.2,2.2)}`};
+
+S[3]=(t)=>{const {cx,cy,ms}=cellScene(t,1,0);const p=eo(P(t,0,1.2));const atp=Math.round(lerp(96,23,eio(P(t,.8,2.8))));
+ let r='';for(let k=0;k<34;k++){const a=H(k+50)*6.283,f=fr(t*.55+H(k+60)),dd=1000-f*590,x=cx+Math.cos(a)*dd,y=cy+Math.sin(a)*dd;
+  r+=`<line x1="${x}" y1="${y}" x2="${x+Math.cos(a)*140}" y2="${y+Math.sin(a)*140}" stroke="#ff3b4e" stroke-width="5" opacity="${.35*Math.sin(Math.PI*f)}" filter="url(#soft)"/><circle cx="${x}" cy="${y}" r="${14+H(k+70)*20}" fill="url(#rad)" opacity="${clamp(Math.sin(Math.PI*f)*1.4)*P(t,.2,.8)}"/>`}
+ const stripes=Array.from({length:16},(_,k)=>`<rect x="${((k*80+t*160)%1280)-120}" y="1580" width="44" height="22" fill="#ff3b4e" opacity=".85" transform="skewX(-30)"/>`).join('');
+ const blink=Math.sin(t*9)>0?1:.45;
+ return `<div class="over" style="background:radial-gradient(90% 60% at 50% 48%,#2a0a12 0%,#0d0508 55%,#030203 100%);opacity:${p}"></div>
+ <svg class="L" width="1080" height="1920">${DEFS}
+ <g opacity="${1-p}">${cell(cx,cy,410,t+8)}${ms(0,1)}</g>
+ <g opacity="${p}">${cell(cx,cy,410,t+8,1)}${ms(1,1)}</g>
+ ${sparksA(cx-170,cy-190,Math.round(26*(1-p)),260,t,1)}
+ ${r}<g opacity="${P(t,.6,1)}">${stripes}</g></svg>
+ ${CHIP(`<em style="color:#FF3B4E;opacity:${blink}">⚠ </em>ОКСИДАТИВНЫЙ СТРЕСС`,'',t,1.0,'left:60px;top:640px',1)}
+ ${CHIP(`<em style="color:#FF3B4E">АТФ ▼</em> ${atp}%`,'',t,.9,'left:700px;top:1450px',1)}
+ <div class="T" style="top:340px">${W('Энергии —',100,P(t,.3,.85))}</div>
+ <div class="T" style="top:470px">${BR('меньше',100,P(t,.75,1.4),1)}</div>
+ ${CAP('Стресс и воспаление снижают выработку энергии — организм подаёт сигналы',t,2.4,2.4)}`};
+
+S[4]=(t)=>{const rings=[520,430,340].map((r,k)=>`<circle cx="540" cy="1000" r="${r}" fill="none" stroke="rgba(212,255,63,${.12+k*.08})" stroke-width="2" stroke-dasharray="${k==1?'4 14':'60 20'}" stroke-dashoffset="${t*(k%2?30:-40)}" opacity="${P(t,.1+k*.15,.6+k*.15)}"/>`).join('');
+ let pulses='';for(let k=0;k<3;k++){const f=fr(t*.45+k/3);pulses+=`<circle cx="540" cy="1000" r="${200+f*480}" fill="none" stroke="#D4FF3F" stroke-width="3" opacity="${(1-f)*.35}"/>`}
+ const lp=eo(P(t,.15,1.1));
+ return `<svg class="L" width="1080" height="1920">${DEFS}${dust(60,'#fff',t,5,2)}${rings}${pulses}
+ <circle cx="540" cy="1000" r="260" fill="#D4FF3F" opacity=".07" filter="url(#b30)"/>
+ ${mito(540,1000+Math.sin(t*1.2)*14,1.25*eb(P(t,.0,.8)),-18+Math.sin(t*.8)*5)}${sparksA(540,1000,22,300,t,9)}</svg>
+ <img src="logo.png" style="position:absolute;z-index:6;left:290px;top:300px;width:500px;opacity:${lp*.92};filter:blur(${(1-lp)*14}px);transform:scale(${1.1-.1*lp})">
+ <div class="T" style="top:470px">${W('Иммуно-',92,P(t,.7,1.2))}</div>
+ <div class="T" style="top:575px">${W('митохондриальный',58,P(t,1.0,1.5))}</div>
+ <div class="T" style="top:1300px">${BLK('паспорт',150,P(t,1.6,2.1))}</div>
+ ${CAP('Анализ энергии клеток и врождённого иммунитета',t,2.6,1.6)}`};
+
+S[5]=(t)=>{const enter=eo(P(t,0,.9)),exit=eio(P(t,5.2,6));
+ const lvl=560*eo(P(t,.6,2.6)),ytop=440-lvl;
+ let c='';for(let k=0;k<9;k++){const y=-60+k*60+Math.sin(t*1.5+k)*10+140;if(y-30>ytop)c+=rbc(-40+H(k+3)*80+Math.sin(t+k)*8,y,26+H(k)*12,H(k+1)*360+t*30);}
+ const lab=eb(P(t,2.2,2.6));
+ return `<svg class="L" width="1080" height="1920">${DEFS}${dust(50,'#fff',t,6,2)}
+ <g transform="translate(${540+exit*500},${1110+(1-enter)*1000-exit*1500}) rotate(${-12-(1-enter)*25+exit*20})" opacity="${1-exit*.6}" ${exit>0?'filter="url(#mblur)"':''}>
+  <ellipse cx="0" cy="40" rx="260" ry="520" fill="#c8193a" opacity="${.22*P(t,.8,2.4)}" filter="url(#b30)"/>
+  <g transform="translate(0,-422) scale(${lab})"><rect x="-118" y="-48" width="236" height="96" rx="18" fill="#D4FF3F"/>
+  <text x="0" y="12" text-anchor="middle" font-family="JetBrains Mono" font-weight="800" font-size="30" fill="#07080a">MITO·ID</text></g>
+  <clipPath id="tb"><rect x="-92" y="-380" width="184" height="800" rx="92"/></clipPath>
+  <g clip-path="url(#tb)"><rect x="-92" y="${ytop}" width="184" height="${lvl+20}" fill="url(#blood)"/>
+   ${lvl>2?`<path d="M-92 ${ytop} Q0 ${ytop-30+Math.sin(t*3)*6} 92 ${ytop} L92 ${ytop+20} L-92 ${ytop+20}Z" fill="#ff5d72" opacity=".7"/>`:''}${c}</g>
+  <rect x="-92" y="-380" width="184" height="800" rx="92" fill="url(#glass)" stroke="rgba(255,255,255,.55)" stroke-width="4"/>
+  <rect x="-70" y="-350" width="18" height="700" rx="9" fill="#fff" opacity=".35"/>
+  ${Array.from({length:9},(_,k)=>`<line x1="40" y1="${-300+k*70}" x2="${k%2?70:86}" y2="${-300+k*70}" stroke="#fff" stroke-width="3" opacity=".6"/>`).join('')}
+ </g>
+ <path d="M760 760 C 930 660 960 520 900 430" stroke="#D4FF3F" stroke-width="4" fill="none" pathLength="1" stroke-dasharray="${eo(P(t,2.9,3.7))} 1"/>
+ ${P(t,3.6,3.8)>0?`<polygon points="900,410 885,440 915,440" fill="#D4FF3F" opacity="${P(t,3.6,3.8)}"/>`:''}</svg>
+ ${CHIP('<em>ОБРАЗЕЦ</em> №0427 · ВЕНОЗНАЯ КРОВЬ','',t,1.8,'left:60px;top:1380px')}
+ <div class="T" style="top:330px"><span class="m" style="font-size:30px;color:var(--lime);opacity:${P(t,.1,.4)}">${TY('шаг 01',P(t,.1,.5))}</span></div>
+ <div class="T" style="top:380px">${W('Кровь',150,P(t,.25,.8))}</div>
+ <div class="T" style="top:550px">${W('из вены',86,P(t,.6,1.1))}</div>
+ <div class="T" style="top:1500px">${BLK('→ в лабораторию',54,P(t,3.0,3.5))}</div>
+ ${CAP('Обычный анализ крови из вены',t,3.8,1.2)}`};
+
+S[6]=(t)=>{const cx=540,cy=1060,R=350,ap=eo(P(t,0,.7)),foc=(1-eo(P(t,.4,1.6)))*12;
+ let g='';[[-140,-110,95],[130,-50,84],[-60,160,90],[175,195,70],[-235,95,60],[40,-250,62]].forEach((q,k)=>g+=granulo(q[0]+Math.sin(t*.4+k)*5,q[1]+Math.cos(t*.3+k)*5,q[2],k*17+3));
+ let rb='';for(let k=0;k<14;k++)rb+=rbc(-300+H(k+200)*600+Math.sin(t*.3+k)*6,-300+H(k+300)*600,32+H(k+400)*18,H(k+500)*360,null,.5);
+ const sf=fr((t-1)/2.4),sy=cy-R+sf*2*R;
+ const lock=P(t,2.0,2.4),bs=lerp(2.2,1,eo(lock)),bx=cx-140,by=cy-110,bl=lock>=1&&Math.floor(t*6)%2===0&&t<3?.3:1;
+ const rows=[['МИТОХ. АКТИВНОСТЬ',30,'#D4FF3F'],['БЕЛКОВЫЙ ОБМЕН',68,'#D4FF3F'],['ОКСИД. СТРЕСС',85,'#FF3B4E'],['НСТ-ТЕСТ',-1,'#FFB547'],['NADH',-1,'#FFB547']];
+ const dots='.'.repeat(1+Math.floor(t*3)%3);
+ return `<svg class="L" width="1080" height="1920">${DEFS}${dust(40,'#D4FF3F',t,7,2)}
+ <defs><filter id="focus" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="${foc.toFixed(2)}"/></filter><clipPath id="ln"><circle cx="${cx}" cy="${cy}" r="${R}"/></clipPath></defs>
+ <g transform="translate(${cx},${cy}) scale(${lerp(.6,1,ap)}) translate(${-cx},${-cy})" opacity="${clamp(ap*1.4)}">
+ <circle cx="${cx}" cy="${cy}" r="${R+90}" fill="#D4FF3F" opacity=".06" filter="url(#b30)"/>
+ <circle cx="${cx}" cy="${cy}" r="${R+40}" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="40"/>
+ <g transform="rotate(${t*6} ${cx} ${cy})">${Array.from({length:120},(_,k)=>{const a=k/120*6.283;return `<line x1="${cx+Math.cos(a)*(R+64)}" y1="${cy+Math.sin(a)*(R+64)}" x2="${cx+Math.cos(a)*(R+(k%10?76:96))}" y2="${cy+Math.sin(a)*(R+(k%10?76:96))}" stroke="rgba(255,255,255,${k%10?.3:.7})" stroke-width="2"/>`}).join('')}</g>
+ <g clip-path="url(#ln)"><circle cx="${cx}" cy="${cy}" r="${R}" fill="url(#smear)"/>
+  <g filter="url(#focus)"><g transform="translate(${cx},${cy}) scale(${lerp(1.15,1,eo(P(t,.4,1.6)))})">${rb}${g}</g></g>
+  ${t>1?`<rect x="${cx-R}" y="${cy-R}" width="${2*R}" height="${sy-(cy-R)}" fill="url(#scanG)"/><line x1="${cx-R}" y1="${sy}" x2="${cx+R}" y2="${sy}" stroke="#eaff9e" stroke-width="4" filter="url(#glowS)"/>`:''}
+  <line x1="${cx}" y1="${cy-R}" x2="${cx}" y2="${cy+R}" stroke="rgba(20,20,30,.35)" stroke-width="2"/><line x1="${cx-R}" y1="${cy}" x2="${cx+R}" y2="${cy}" stroke="rgba(20,20,30,.35)" stroke-width="2"/>
+  <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#000" stroke-width="60" opacity=".35" filter="url(#b16)"/></g></g>
+ ${lock>0?`<rect x="${bx-110*bs}" y="${by-110*bs}" width="${220*bs}" height="${220*bs}" fill="none" stroke="#D4FF3F" stroke-width="4" opacity="${clamp(lock*3)*bl}" style="filter:drop-shadow(0 0 8px #D4FF3F)"/>`:''}</svg>
+ ${CHIP('<em>ГРАНУЛОЦИТ</em> · 98%','',t,2.45,`left:${cx-250}px;top:${cy-280}px;font-size:20px;padding:8px 12px`)}
+ <div class="T" style="top:300px"><span class="m" style="font-size:28px;color:var(--lime)">${TY('шаг 02 · ваши иммунные клетки',P(t,.1,.9))}</span></div>
+ <div class="T" style="top:350px">${W('Под',100,P(t,.2,.7))}</div>
+ <div class="T" style="top:470px">${BR('микроскопом',74,P(t,.5,1.1))}</div>
+ <div style="position:absolute;left:90px;right:90px;top:1480px;z-index:6;border:2px solid rgba(255,255,255,.25);background:rgba(6,8,10,.8);padding:20px 30px;opacity:${P(t,2.5,2.8)};transform:translateY(${(1-eo(P(t,2.5,3)))*60}px)">
+  ${rows.map((r,k)=>{const a=2.8+k*.4,p=P(t,a,a+.6);const val=r[1]<0?(t>a?'АНАЛИЗ'+dots:''):(t>a?pad(r[1]*eo(p))+'%':'');
+   return `<div class="m" style="display:flex;justify-content:space-between;font-size:27px;line-height:1.6;opacity:${t>a?1:.25}"><span style="color:rgba(255,255,255,.8)">${r[0]}</span><span style="flex:1;border-bottom:2px dotted rgba(255,255,255,.2);margin:0 16px 14px"></span><span style="color:${r[2]}">${val}</span></div>`}).join('')}
+ </div>`};
+
+S[7]=(t)=>{const rows=[['Митохондриальная активность',.30,'норма','#D4FF3F'],['Белковый обмен',.68,'норма','#D4FF3F'],['Оксидативный стресс',.85,'внимание','#FF3B4E'],['NADH',.52,'погранично','#FFB547']];
+ const comp=[['I',0],['II',-27.7],['III',-23.4],['IV',0],['V',-23.4]];const pin=eo(P(t,.3,1.1));
+ return `<svg class="L" width="1080" height="1920">${DEFS}${dust(40,'#fff',t,8,2)}</svg>
+ <div class="T" style="top:330px">${W('Понятный',104,P(t,.1,.6))}</div>
+ <div class="T" style="top:460px">${BLK('отчёт',110,P(t,.5,1.0))}</div>
+ <div style="position:absolute;left:70px;right:70px;top:700px;z-index:6;border:2px solid rgba(255,255,255,.22);background:linear-gradient(180deg,rgba(20,24,32,.92),rgba(8,10,14,.92));padding:40px 40px 30px;box-shadow:0 0 80px rgba(212,255,63,.08);opacity:${pin};transform:translateY(${(1-pin)*300}px)">
+  <div class="m" style="display:flex;justify-content:space-between;font-size:22px;color:rgba(255,255,255,.55);margin-bottom:30px"><span>МИТО-ПАСПОРТ · ID 0427</span><span style="color:var(--lime);opacity:${Math.floor(t*2)%2?1:.4}">● ГОТОВ</span></div>
+  ${rows.map((r,k)=>{const p=eo(P(t,1.1+k*.35,2.1+k*.35)),v=r[1]*p;return `<div style="margin-bottom:34px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="sm" style="font-size:28px">${r[0]}</span><span class="m" style="font-size:24px;color:${r[3]};opacity:${p>.05?1:0}">${Math.round(v*100)}% · ${r[2]}</span></div>
+   <div style="position:relative;height:18px;margin-top:16px;background:linear-gradient(90deg,#FF3B4E 0 18%,#FFB547 18% 45%,#D4FF3F 45% 80%,#FF3B4E 80%);clip-path:inset(0 ${(1-eo(P(t,1+k*.2,1.6+k*.2)))*100}% 0 0)"><div style="position:absolute;left:calc(${v*100}% - 4px);top:-14px;width:8px;height:46px;background:#fff;box-shadow:0 0 14px #fff;opacity:${p>0?1:0}"></div></div></div>`}).join('')}
+  <div class="m" style="font-size:22px;color:rgba(255,255,255,.55);margin:10px 0 18px">ДЫХАТЕЛЬНАЯ ЦЕПЬ · КОМПЛЕКСЫ</div>
+  <svg width="860" height="190">${comp.map((c,k)=>{const x=86+k*172,pp=eo(P(t,2.8+k*.15,3.6+k*.15)),p=Math.min(1,Math.abs(c[1])/50),col=c[1]===0?'#D4FF3F':'#FF3B4E';return `<path d="M${x-62} 120 A62 62 0 0 1 ${x+62} 120" stroke="rgba(255,255,255,.15)" stroke-width="12" fill="none"/>
+   <path d="M${x-62} 120 A62 62 0 0 1 ${x+62} 120" stroke="${col}" stroke-width="12" fill="none" stroke-dasharray="${(c[1]===0?195:195*p)*pp} 999" style="filter:drop-shadow(0 0 8px ${col})"/>
+   <text x="${x}" y="112" text-anchor="middle" font-family="JetBrains Mono" font-weight="800" font-size="26" fill="#fff" opacity="${pp}">${(c[1]*pp).toFixed(1).replace('-0.0','0').replace('.0','')}%</text>
+   <text x="${x}" y="170" text-anchor="middle" font-family="Unbounded" font-weight="800" font-size="24" fill="rgba(255,255,255,.7)">${c[0]}</text>`}).join('')}</svg>
+ </div>
+ <div class="T" style="top:1620px"><span class="sm" style="font-size:38px">${TY('разбор с врачом + ваши симптомы',P(t,4.2,5.4)).replace('с врачом','<span style="color:var(--lime)">с врачом</span>')}</span></div>`};
+
+S[8]=(t)=>{const v=lerp(12,100,eio(P(t,.3,2.6))),col=v<35?'#FF3B4E':v<65?'#FFB547':'#D4FF3F';
+ return `<svg class="L" width="1080" height="1920">${DEFS}${dust(60,'#D4FF3F',t,9,2,-30)}
+ <circle cx="540" cy="1020" r="300" fill="${col}" opacity="${.05+v/100*.12}" filter="url(#b30)"/>
+ ${gauge(540,1020,310,v/100,col,'','',t*10)}
+ ${mito(540,1020+Math.sin(t*1.5)*10,1.1,-18+Math.sin(t)*4,v<40,1)}${sparksA(540,1020,Math.round(6+v/100*26),300,t,12,.6,lerp(.6,1.3,v/100))}
+ <text x="540" y="1420" text-anchor="middle" font-family="JetBrains Mono" font-weight="800" font-size="58" fill="#fff">ЭНЕРГИЯ ${Math.round(v)}%</text></svg>
+ <div class="T" style="top:340px">${W('Персональный',76,P(t,.1,.6))}</div>
+ <div class="T" style="top:450px">${BLK('план',120,P(t,.45,.95))}</div>
+ ${CAP('Врач видит картину на клеточном уровне и подбирает поддержку под вас',t,1.0,2.0)}`};
+
+S[9]=(t)=>{const lp=eo(P(t,.1,.9));
+ return `<div class="over" style="background:radial-gradient(80% 50% at 50% 42%,#15180f 0%,#07080a 60%,#020203 100%)"></div>
+ <svg class="L" width="1080" height="1920">${DEFS}${dust(70,'#fff',t,10,2)}
+ <circle cx="540" cy="560" r="230" fill="#FF7A59" opacity=".18" filter="url(#b30)"/>
+ <circle cx="540" cy="560" r="190" fill="none" stroke="rgba(212,255,63,.6)" stroke-width="3" pathLength="1" stroke-dasharray="${eo(P(t,0,.8))} 1" transform="rotate(-90 540 560)"/>
+ <circle cx="540" cy="560" r="214" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="2" stroke-dasharray="3 12" transform="rotate(${t*10} 540 560)"/>
+ ${mito(540,560+Math.sin(t*1.4)*8,.95*eb(P(t,0,.6)),-18+Math.sin(t)*4)}${sparksA(540,560,14,200,t,13)}</svg>
+ <img src="logo.png" style="position:absolute;z-index:6;left:110px;top:860px;width:860px;opacity:${lp};filter:blur(${(1-lp)*16}px);transform:scale(${1.12-.12*lp})">
+ <div class="T" style="top:1120px">${W('начинаем',78,P(t,.6,1.1))}</div>
+ <div class="T" style="top:1215px">${BR('с клетки',78,P(t,.9,1.5))}</div>
+ <div class="T" style="top:1385px">${BLK('записаться →',56,P(t,1.4,1.8))}</div>
+ <div class="T" style="top:1525px"><span class="m" style="font-size:28px;opacity:.85">${TY('@lovemybody.clinic',P(t,1.7,2.3))}</span></div>
+ <div style="position:absolute;left:90px;right:90px;top:1600px;z-index:6;text-align:center;font-size:19px;line-height:1.4;color:rgba(255,255,255,.45);opacity:${P(t,1.9,2.4)}">Исследование не является самостоятельным методом диагностики. Результаты оценивает врач. Имеются противопоказания, необходима консультация специалиста.</div>`};
+
+// ===== зерно =====
+const GR=[];(function(){for(let g=0;g<4;g++){const c=document.createElement('canvas');c.width=540;c.height=960;const x=c.getContext('2d');const im=x.createImageData(540,960);
+ for(let k=0;k<im.data.length;k+=4){const v=Math.random()*255;im.data[k]=im.data[k+1]=im.data[k+2]=v;im.data[k+3]=255}x.putImageData(im,0,0);GR.push(c.toDataURL())}})();
+
+// ===== рендер =====
+const stage=document.getElementById('stage');
+window.render=function(T){
+ let i=SC.findIndex(s=>T>=s[0]&&T<s[1]);if(i<0)i=SC.length-1;
+ const [a,b]=SC[i],t=T-a,d=b-a;
+ // камера
+ let sc=1+.045*(t/d),bl=0,sx=0,sy=0,rot=0;
+ if(i===0){const z=P(t,4.35,5);sc+=z*z*1.6;bl+=z*z*14}
+ if(i===1){const z=P(t,5.45,6);sc+=z*z*1.4;bl+=z*z*12}
+ if(i===3){sx+=Math.sin(T*47)*3;sy+=Math.cos(T*53)*3}
+ SHAKES.forEach(([st,am])=>{const k=T-st;if(k>=0&&k<.5){const e=Math.pow(1-k/.5,2)*am;sx+=Math.sin(k*90)*28*e;sy+=Math.cos(k*77)*22*e;rot+=Math.sin(k*60)*1.2*e}});
+ // переходы
+ let fl=0,gl=0;SC.forEach((s,k)=>{if(k===0)return;const dt=T-s[0];if(dt>-.12&&dt<.4){const f=dt<0?(dt+.12)/.12:1-dt/.4;fl=Math.max(fl,f);gl=Math.max(gl,f)}});
+ bl+=fl*9;sc+=fl*.06;
+ const col=i===3?'#FF3B4E':'#D4FF3F';
+ let bars='';if(gl>.05){for(let k=0;k<7;k++){const y=H(k+Math.floor(T*30))*1920,h=6+H(k*3+Math.floor(T*30))*60;bars+=`<div style="position:absolute;left:0;right:0;top:${y}px;height:${h}px;background:${k%3?col:'#fff'};opacity:${gl*.55};mix-blend-mode:screen;transform:translateX(${(H(k*7+T)-.5)*200}px)"></div>`}}
+ const fade=i===9?0:0;
+ stage.innerHTML=`<div class="cam" style="transform:translate(${sx}px,${sy}px) scale(${sc}) rotate(${rot}deg);filter:${bl>.05?`blur(${bl.toFixed(2)}px)`:'none'} ${fl>0?`brightness(${1+fl*.8})`:''}">
+  <div class="F">${S[i](t,d)}</div></div>
+  ${hud(i,T,col)}
+  <div class="over" style="background:radial-gradient(120% 75% at 50% 50%,transparent 55%,rgba(0,0,0,.7) 100%);z-index:40"></div>
+  <div class="over" style="z-index:41;background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 2px,transparent 2px 5px)"></div>
+  <img class="over" src="${GR[Math.floor(T*30)%4]}" style="width:1080px;height:1920px;z-index:42;opacity:.09;mix-blend-mode:overlay">
+  <div class="over" style="z-index:43">${bars}</div>
+  <div class="over" style="z-index:44;background:#fff;opacity:${fl*.55}"></div>
+  <div class="over" style="z-index:45;background:#000;opacity:${clamp(1-T/.35)}"></div>`;
+};
+window.render(+(new URLSearchParams(location.search).get('t')||2));
+</script></body></html>
