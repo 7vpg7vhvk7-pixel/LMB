@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Playfair+Display:ital,wght@1,600;1,700&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#081233;--navy2:#030820;--red:#E8394A;--gold:#FFC56B;--coral:#FF7A59;--ink:#0E1730;--paper:#F4F6FA}
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:1080px;height:1920px;overflow:hidden;font-family:Manrope,sans-serif;background:#000}
+.frame{position:relative;width:1080px;height:1920px;overflow:hidden}
+.dark{background:radial-gradient(120% 80% at 50% 40%,#13245e 0%,var(--navy) 45%,var(--navy2) 100%);color:#fff}
+.light{background:radial-gradient(120% 70% at 50% 30%,#fff 0%,var(--paper) 60%,#E6EAF2 100%);color:var(--ink)}
+.h{font-family:Unbounded;font-weight:800;letter-spacing:-1px;text-transform:uppercase;line-height:1.02}
+.it{font-family:'Playfair Display';font-style:italic;font-weight:700;color:var(--red)}
+.title{position:absolute;left:0;right:0;text-align:center}
+.cap{position:absolute;left:90px;right:90px;bottom:250px;text-align:center;font-family:Manrope;font-weight:700;font-size:46px;line-height:1.25}
+.cap span{background:rgba(255,255,255,.95);color:#0E1730;padding:6px 18px;border-radius:14px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.cap b{color:var(--red)}
+.light .cap span{background:#0E1730;color:#fff}
+.chip{position:absolute;padding:20px 30px;border-radius:999px;font-weight:700;font-size:34px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.28);backdrop-filter:blur(12px);color:#fff;display:flex;gap:16px;align-items:center;white-space:nowrap;box-shadow:0 0 40px rgba(120,170,255,.15)}
+.chip i{width:16px;height:16px;border-radius:50%;background:var(--gold);box-shadow:0 0 18px var(--gold)}
+.tag{position:absolute;top:110px;left:80px;font-family:Manrope;font-weight:700;font-size:26px;letter-spacing:6px;opacity:.7;text-transform:uppercase}
+.brand{position:absolute;top:110px;right:80px;font-family:Unbounded;font-weight:700;font-size:26px;letter-spacing:3px;opacity:.8}
+svg{position:absolute;left:0;top:0}
+</style></head><body>
+<div id="root"></div>
+<script>
+const scene=new URLSearchParams(location.search).get('s')||'1';
+const R=document.getElementById('root');
+const rnd=(()=>{let s=7;return()=>(s=(s*16807)%2147483647)/2147483647})();
+
+function defs(){return `<defs>
+<radialGradient id="rbc" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#7a0b1c"/><stop offset=".55" stop-color="#b0142c"/><stop offset=".85" stop-color="#ff4a5c"/><stop offset="1" stop-color="#ff7b86"/></radialGradient>
+<radialGradient id="cell" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#3b6bd6" stop-opacity=".35"/><stop offset=".7" stop-color="#1b3a8f" stop-opacity=".25"/><stop offset="1" stop-color="#7fb2ff" stop-opacity=".45"/></radialGradient>
+<radialGradient id="nuc" cx="40%" cy="35%" r="65%"><stop offset="0" stop-color="#c79bff"/><stop offset="1" stop-color="#5b2aa8"/></radialGradient>
+<linearGradient id="mito" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFB36B"/><stop offset=".5" stop-color="#FF6E54"/><stop offset="1" stop-color="#D93A55"/></linearGradient>
+<linearGradient id="mitoIn" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a6b"/><stop offset="1" stop-color="#b8284a"/></linearGradient>
+<radialGradient id="spark"><stop offset="0" stop-color="#fff"/><stop offset=".3" stop-color="#FFD98A"/><stop offset="1" stop-color="#FFC56B" stop-opacity="0"/></radialGradient>
+<radialGradient id="rad"><stop offset="0" stop-color="#fff"/><stop offset=".3" stop-color="#ff3b4e"/><stop offset="1" stop-color="#ff3b4e" stop-opacity="0"/></radialGradient>
+<radialGradient id="smear" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fbf3f7"/><stop offset=".8" stop-color="#efdbe8"/><stop offset="1" stop-color="#d9bfd3"/></radialGradient>
+<linearGradient id="scan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fe3ff" stop-opacity="0"/><stop offset=".9" stop-color="#5fe3ff" stop-opacity=".35"/><stop offset="1" stop-color="#bff6ff" stop-opacity=".9"/></linearGradient>
+<linearGradient id="ring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9eef8"/><stop offset=".5" stop-color="#7c8aa8"/><stop offset="1" stop-color="#dfe6f3"/></linearGradient>
+<linearGradient id="blood" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8e0f22"/><stop offset=".5" stop-color="#d21f36"/><stop offset="1" stop-color="#8e0f22"/></linearGradient>
+<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<filter id="soft"><feGaussianBlur stdDeviation="2"/></filter>
+<filter id="blur8"><feGaussianBlur stdDeviation="10"/></filter>
+<filter id="blur20"><feGaussianBlur stdDeviation="22"/></filter>
+<filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="30" stdDeviation="35" flood-color="#1b2a55" flood-opacity=".22"/></filter>
+</defs>`}
+
+function rbc(x,y,r,rot,blur){return `<g transform="translate(${x},${y}) rotate(${rot}) scale(1,.82)" ${blur?`filter="url(#${blur})"`:''}><circle r="${r}" fill="url(#rbc)"/><circle r="${r*.42}" fill="#6a0716" opacity=".55"/></g>`}
+function mito(x,y,s,rot,dim){
+  let w=150,h=62,crist='';
+  let d='M'+(-w+30)+' 0';
+  for(let i=0;i<9;i++){const xx=-w+30+i*((2*w-60)/9);d+=` L${xx+8} ${i%2?42:-42} L${xx+((2*w-60)/9)} 0`}
+  return `<g transform="translate(${x},${y}) rotate(${rot}) scale(${s})" ${dim?'opacity=".45"':'filter="url(#glow)"'}>
+   <ellipse rx="${w}" ry="${h}" fill="url(#mito)" stroke="#FFD2A6" stroke-width="5"/>
+   <ellipse rx="${w-16}" ry="${h-14}" fill="url(#mitoIn)"/>
+   <path d="${d}" fill="none" stroke="#FFE3C4" stroke-width="7" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/>
+  </g>`}
+function sparks(cx,cy,n,spread,col='spark'){let o='';for(let i=0;i<n;i++){const a=rnd()*6.28,d=spread*(.3+rnd()*.9),r=6+rnd()*16;o+=`<circle cx="${cx+Math.cos(a)*d}" cy="${cy+Math.sin(a)*d}" r="${r}" fill="url(#${col})"/>`}return o}
+function bokeh(n,col){let o='';for(let i=0;i<n;i++){o+=`<circle cx="${rnd()*1080}" cy="${rnd()*1920}" r="${2+rnd()*5}" fill="${col}" opacity="${.2+rnd()*.6}"/>`}return o}
+function granulocyte(x,y,r){
+  let g='';for(let i=0;i<40;i++){const a=rnd()*6.28,d=rnd()*r*.85;g+=`<circle cx="${Math.cos(a)*d}" cy="${Math.sin(a)*d}" r="${2+rnd()*3}" fill="#c58ab8" opacity=".7"/>`}
+  return `<g transform="translate(${x},${y}) rotate(${rnd()*360})"><circle r="${r}" fill="#f3d9ea" stroke="#d7a7c9" stroke-width="3"/>${g}
+  <g fill="#7a2a8f" filter="url(#soft)"><ellipse cx="${-r*.38}" cy="${-r*.12}" rx="${r*.26}" ry="${r*.2}"/><ellipse cx="${r*.05}" cy="${r*.22}" rx="${r*.24}" ry="${r*.19}"/><ellipse cx="${r*.42}" cy="${-r*.18}" rx="${r*.22}" ry="${r*.18}"/>
+  <path d="M${-r*.38} ${-r*.12} Q${-r*.15} ${r*.25} ${r*.05} ${r*.22} Q${r*.3} ${r*.1} ${r*.42} ${-r*.18}" stroke="#7a2a8f" stroke-width="${r*.09}" fill="none"/></g></g>`}
+function battery(x,y,pct,col){return `<g transform="translate(${x},${y})" filter="url(#glow)"><rect x="0" y="0" width="230" height="110" rx="26" fill="none" stroke="#fff" stroke-width="8" opacity=".9"/><rect x="236" y="34" width="16" height="42" rx="6" fill="#fff" opacity=".9"/><rect x="16" y="16" width="${198*pct}" height="78" rx="14" fill="${col}"/></g>`}
+
+const S={};
+S['1']=()=>`<div class="frame dark">
+<svg width="1080" height="1920">${defs()}
+ ${rbc(170,380,170,20,'blur20')}${rbc(930,520,120,-30,'blur8')}${rbc(860,1500,210,40,'blur20')}${rbc(160,1380,110,10,'blur8')}${rbc(560,1720,90,0,'blur8')}
+ ${bokeh(70,'#9fc2ff')}
+ ${battery(415,560,.12,'#ff3b4e')}
+ <text x="540" y="770" text-anchor="middle" font-family="Unbounded" font-weight="700" font-size="40" fill="#ff6b78" letter-spacing="4">12%</text>
+</svg>
+<div class="tag">Love My Body · клиника</div>
+<div class="title" style="top:860px"><div class="h" style="font-size:150px">Нет<br>сил?</div><div class="it" style="font-size:96px;margin-top:20px">ответ — в клетках</div></div>
+<div class="cap"><span>Высыпаетесь, но сил <b>всё равно нет?</b></span></div>
+</div>`;
+
+S['2']=()=>{const cx=540,cy=1020;return `<div class="frame dark">
+<svg width="1080" height="1920">${defs()}
+ ${bokeh(60,'#9fc2ff')}
+ <circle cx="${cx}" cy="${cy}" r="470" fill="#4d86ff" opacity=".12" filter="url(#blur20)"/>
+ <circle cx="${cx}" cy="${cy}" r="420" fill="url(#cell)" stroke="#9cc4ff" stroke-width="10" filter="url(#glow)"/>
+ <circle cx="${cx}" cy="${cy}" r="398" fill="none" stroke="#9cc4ff" stroke-width="3" opacity=".5" stroke-dasharray="4 14"/>
+ <circle cx="${cx+40}" cy="${cy+40}" r="120" fill="url(#nuc)" opacity=".9" filter="url(#glow)"/>
+ <circle cx="${cx+70}" cy="${cy+20}" r="30" fill="#e6d2ff" opacity=".6"/>
+ ${mito(cx-170,cy-200,.95,-20)}${mito(cx+180,cy-180,.7,25)}${mito(cx-200,cy+170,.75,30)}${mito(cx+190,cy+250,.6,-35)}
+ ${sparks(cx-170,cy-200,22,230)}${sparks(cx+180,cy-180,10,150)}${sparks(cx-200,cy+170,10,150)}
+ <line x1="${cx-170}" y1="${cy-200}" x2="190" y2="520" stroke="#fff" stroke-width="2" stroke-dasharray="6 8" opacity=".7"/>
+ <circle cx="${cx-170}" cy="${cy-200}" r="10" fill="#fff"/>
+</svg>
+<div class="tag">Love My Body</div>
+<div class="title" style="top:210px"><div class="h" style="font-size:84px">Митохондрии</div><div class="it" style="font-size:74px;margin-top:6px">электростанции клетки</div></div>
+<div class="chip" style="left:90px;top:440px"><i></i>АТФ = энергия</div>
+<div class="cap"><span>Почти в каждой клетке есть <b>митохондрии</b> — крошечные электростанции</span></div>
+</div>`};
+
+S['3']=()=>{const cx=540,cy=1000;return `<div class="frame dark" style="background:radial-gradient(120% 80% at 50% 40%,#3a0f2a 0%,#150a2a 50%,#05061a 100%)">
+<svg width="1080" height="1920">${defs()}
+ <circle cx="${cx}" cy="${cy}" r="420" fill="url(#cell)" stroke="#ff8b9a" stroke-width="8" opacity=".85" stroke-dasharray="60 10 20 10"/>
+ <circle cx="${cx+40}" cy="${cy+40}" r="120" fill="url(#nuc)" opacity=".6"/>
+ ${mito(cx-170,cy-200,.95,-20,1)}${mito(cx+180,cy-180,.7,25,1)}${mito(cx-200,cy+170,.75,30,1)}${mito(cx+190,cy+250,.6,-35,1)}
+ ${(()=>{let o='';for(let i=0;i<26;i++){const a=rnd()*6.28,d=380+rnd()*260;const x=cx+Math.cos(a)*d,y=cy+Math.sin(a)*d;o+=`<line x1="${x}" y1="${y}" x2="${x+Math.cos(a)*90}" y2="${y+Math.sin(a)*90}" stroke="#ff3b4e" stroke-width="4" opacity=".35"/><circle cx="${x}" cy="${y}" r="${16+rnd()*16}" fill="url(#rad)"/>`}return o})()}
+ <g transform="translate(240,1500)"><rect width="600" height="26" rx="13" fill="#ffffff22"/><rect width="150" height="26" rx="13" fill="#ff3b4e" filter="url(#glow)"/></g>
+ <text x="240" y="1470" font-family="Manrope" font-weight="700" font-size="30" fill="#fff" opacity=".8" letter-spacing="3">ЭНЕРГИЯ КЛЕТКИ</text>
+</svg>
+<div class="tag">Love My Body</div>
+<div class="title" style="top:230px"><div class="h" style="font-size:78px">Стресс · воспаление</div><div class="it" style="font-size:80px;margin-top:10px">оксидативный стресс</div></div>
+<div class="cap" style="bottom:150px"><span>…энергии становится меньше — и&nbsp;организм <b>подаёт сигналы</b></span></div>
+</div>`};
+
+S['4']=()=>`<div class="frame light">
+<svg width="1080" height="1920">${defs()}
+ <g transform="translate(540,1000) rotate(-8)" filter="url(#shadow)">
+  <rect x="-110" y="-430" width="220" height="80" rx="16" fill="#dfe5f0"/>
+  <rect x="-95" y="-370" width="190" height="760" rx="95" fill="#fff" stroke="#c9d3e6" stroke-width="6"/>
+  <clipPath id="tube"><rect x="-85" y="-360" width="170" height="740" rx="85"/></clipPath>
+  <g clip-path="url(#tube)"><rect x="-85" y="-80" width="170" height="460" fill="url(#blood)"/>
+  <path d="M-85 -80 Q0 -110 85 -80 L85 -60 L-85 -60Z" fill="#ff5d6e" opacity=".6"/>
+  ${rbc(-30,40,40,10)}${rbc(35,140,36,-20)}${rbc(-25,250,42,40)}${rbc(30,320,34,0)}${rbc(-10,-20,30,0)}</g>
+  <rect x="-70" y="-340" width="22" height="660" rx="11" fill="#fff" opacity=".55"/>
+  <rect x="-96" y="-200" width="192" height="90" fill="#0E1730"/>
+  <text x="0" y="-145" text-anchor="middle" font-family="Unbounded" font-weight="700" font-size="30" fill="#fff">MITO · ID</text>
+ </g>
+ <path d="M700 820 C 900 700, 950 520, 860 420" stroke="#E8394A" stroke-width="5" fill="none" stroke-dasharray="10 14"/>
+ <circle cx="860" cy="420" r="16" fill="#E8394A"/>
+</svg>
+<div class="tag" style="color:#0E1730">Шаг 1</div><div class="brand" style="color:#0E1730">LOVE MY BODY</div>
+<div class="title" style="top:230px"><div class="h" style="font-size:92px">Кровь<br>из вены</div><div class="it" style="font-size:72px;margin-top:10px">→ в лабораторию</div></div>
+<div class="cap"><span>Всё начинается с <b>обычного анализа</b> крови из вены</span></div>
+</div>`;
+
+S['5']=()=>{const cx=540,cy=980,r=360;let cells='';const pos=[[-140,-120,95],[130,-60,85],[-60,150,90],[170,190,70],[-230,90,60],[40,-250,62]];pos.forEach(p=>cells+=granulocyte(p[0],p[1],p[2]));
+let rb='';for(let i=0;i<14;i++){rb+=`<g opacity=".55">${rbc(-300+rnd()*600,-300+rnd()*600,34+rnd()*18,rnd()*360)}</g>`}
+return `<div class="frame dark">
+<svg width="1080" height="1920">${defs()}
+ ${bokeh(50,'#7fe7ff')}
+ <circle cx="${cx}" cy="${cy}" r="${r+70}" fill="#5fe3ff" opacity=".12" filter="url(#blur20)"/>
+ <circle cx="${cx}" cy="${cy}" r="${r+46}" fill="none" stroke="url(#ring)" stroke-width="44"/>
+ <circle cx="${cx}" cy="${cy}" r="${r+22}" fill="none" stroke="#0b1430" stroke-width="6"/>
+ <clipPath id="lens"><circle cx="${cx}" cy="${cy}" r="${r}"/></clipPath>
+ <g clip-path="url(#lens)"><circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#smear)"/>
+  <g transform="translate(${cx},${cy})">${rb}${cells}</g>
+  <rect x="${cx-r}" y="${cy-r}" width="${2*r}" height="${r*1.15}" fill="url(#scan)"/>
+  <line x1="${cx-r}" y1="${cy-r+r*1.15}" x2="${cx+r}" y2="${cy-r+r*1.15}" stroke="#dffaff" stroke-width="4" filter="url(#glow)"/>
+  <circle cx="${cx-140}" cy="${cy-120}" r="118" fill="none" stroke="#2ad4ff" stroke-width="5" stroke-dasharray="18 10"/>
+ </g>
+ ${[0,90,180,270].map(a=>`<line x1="${cx+Math.cos(a*Math.PI/180)*(r+80)}" y1="${cy+Math.sin(a*Math.PI/180)*(r+80)}" x2="${cx+Math.cos(a*Math.PI/180)*(r+110)}" y2="${cy+Math.sin(a*Math.PI/180)*(r+110)}" stroke="#7fe7ff" stroke-width="4"/>`).join('')}
+</svg>
+<div class="tag">Шаг 2 · лаборатория</div><div class="brand">LOVE MY BODY</div>
+<div class="title" style="top:210px"><div class="h" style="font-size:84px">Под микроскопом</div><div class="it" style="font-size:70px;margin-top:6px">ваши иммунные клетки</div></div>
+<div class="chip" style="left:60px;top:1450px"><i></i>Митохондриальная активность</div>
+<div class="chip" style="right:60px;top:1560px"><i style="background:#ff6b78;box-shadow:0 0 18px #ff6b78"></i>Оксидативный стресс</div>
+<div class="chip" style="left:120px;top:1670px"><i style="background:#7fe7ff;box-shadow:0 0 18px #7fe7ff"></i>Белковый обмен · NADH</div>
+<div class="chip" style="left:640px;top:1340px;font-size:28px;padding:14px 24px">гранулоцит · НСТ-тест</div>
+</div>`};
+
+S['6']=()=>{const rows=[['Митохондриальная активность',.30,'Хорошие энергетические процессы'],['Белковый обмен',.68,'Обменные процессы в норме'],['Оксидативный стресс',.85,'Требует внимания'],['NADH',.52,'Пограничное значение']];
+const bar=(p)=>`<div style="position:relative;height:30px;border-radius:15px;background:linear-gradient(90deg,#E8394A 0 20%,#F6B93B 20% 55%,#2EC27E 55% 100%);margin:18px 0 10px"><div style="position:absolute;left:calc(${p*100}% - 26px);top:-24px;width:52px;height:52px;border-radius:50%;background:#fff;border:6px solid #0E1730;box-shadow:0 8px 20px rgba(14,23,48,.3)"></div></div>`;
+return `<div class="frame light">
+<div class="tag" style="color:#0E1730">Шаг 3 · результат</div><div class="brand" style="color:#0E1730">LOVE MY BODY</div>
+<div class="title" style="top:220px"><div class="h" style="font-size:90px">Понятный отчёт</div><div class="it" style="font-size:72px;margin-top:6px">разбор с врачом</div></div>
+<div style="position:absolute;left:90px;right:90px;top:560px;height:1060px;border-radius:56px;background:#0E1730;padding:26px;box-shadow:0 40px 90px rgba(14,23,48,.3)">
+ <div style="background:#fff;border-radius:36px;height:100%;padding:56px 52px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:34px"><div style="font-family:Unbounded;font-weight:700;font-size:34px">МИТО-ПАСПОРТ</div><div style="font-size:24px;color:#6b7690;font-weight:700">ID 0427 · кровь</div></div>
+  ${rows.map(r=>`<div style="margin-bottom:38px"><div style="font-weight:700;font-size:32px">${r[0]}</div>${bar(r[1])}<div style="font-size:24px;color:#6b7690">${r[2]}</div></div>`).join('')}
+ </div></div>
+<div class="cap" style="bottom:160px"><span>Врач разбирает отчёт <b>вместе с вашими симптомами</b></span></div>
+</div>`};
+
+S['7']=()=>`<div class="frame light">
+<svg width="1080" height="1920">${defs()}
+ <circle cx="540" cy="760" r="300" fill="#ffb07a" opacity=".35" filter="url(#blur20)"/>
+ <circle cx="540" cy="760" r="230" fill="#fff" stroke="#E8394A" stroke-width="8" filter="url(#shadow)"/>
+ <circle cx="540" cy="760" r="210" fill="none" stroke="#E8394A" stroke-width="2" stroke-dasharray="3 12" opacity=".6"/>
+ ${mito(540,760,1.05,-18)}
+ ${sparks(540,760,16,200)}
+</svg>
+<div class="title" style="top:1110px"><div class="h" style="font-size:104px">Love My Body</div><div class="it" style="font-size:84px;margin-top:10px">начинаем с клетки</div>
+<div style="display:inline-block;margin-top:70px;padding:28px 60px;border-radius:999px;background:#E8394A;color:#fff;font-family:Unbounded;font-weight:700;font-size:38px;box-shadow:0 20px 50px rgba(232,57,74,.35)">ЗАПИСАТЬСЯ</div>
+<div style="margin-top:40px;font-weight:700;font-size:34px;color:#0E1730">@lovemybody.clinic</div></div>
+<div style="position:absolute;left:90px;right:90px;bottom:90px;text-align:center;font-size:22px;color:#6b7690;line-height:1.4">Исследование не является самостоятельным методом диагностики. Результаты оценивает врач. Имеются противопоказания, необходима консультация специалиста.</div>
+</div>`;
+
+R.innerHTML=S[scene]();
+</script></body></html>
