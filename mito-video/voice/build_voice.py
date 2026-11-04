@@ -1,4 +1,4 @@
-"""Озвучка (RHVoice, aleksandr-hq) -> общий voice.wav + timeline.json/timeline.js.
+"""Озвучка (RHVoice, yuriy) -> общий voice.wav + timeline.json/timeline.js.
 Каждая строка lines.txt = одна сцена. Внутри строки фраза бьётся на куски по знакам препинания,
 время кусков берётся по паузам в синтезированной речи (для субтитров)."""
 import json, re, subprocess, sys, wave
@@ -6,7 +6,7 @@ import numpy as np
 
 HERE = sys.argv[1]
 SR = 44100
-VOICE, RATE = 'aleksandr-hq', '140'
+VOICE, RATE, PITCH = 'yuriy', '138', '112'
 LEAD, TAIL = 0.3, 0.4
 MIN = {2: 3.2, 10: 5.6}           # минимальная длина сцен (индексы сцен)
 # что показывать в субтитрах вместо «фонетического» текста
@@ -14,7 +14,7 @@ DISPLAY = {'Лав Май Бади': 'Love My Body', 'АТФ': 'АТФ'}
 
 def tts(text):
     tmp = f'{HERE}/_tmp.wav'
-    subprocess.run(['RHVoice-test', '-p', VOICE, '-q', 'max', '-r', RATE, '-o', tmp], input=text.encode(), capture_output=True)
+    subprocess.run(['RHVoice-test', '-p', VOICE, '-q', 'max', '-r', RATE, '-t', PITCH, '-o', tmp], input=text.encode(), capture_output=True)
     raw = subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-i', tmp, '-ac', '1', '-ar', str(SR), '-f', 'f32le', '-'],
                          capture_output=True).stdout
     return np.frombuffer(raw, np.float32).copy()
