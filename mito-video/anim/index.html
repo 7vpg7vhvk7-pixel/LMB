@@ -335,9 +335,12 @@ const GR=[];(function(){for(let g=0;g<4;g++){const c=document.createElement('can
  for(let k=0;k<im.data.length;k+=4){const v=Math.random()*255;im.data[k]=im.data[k+1]=im.data[k+2]=v;im.data[k+3]=255}x.putImageData(im,0,0);GR.push(c.toDataURL())}})();
 
 function SUBS(T,i){if(i===0||i===10)return '';const s=TL.subs.find(x=>x.scene===i&&T>=x.s-.05&&T<x.e+.2);if(!s)return '';
- const L=s.text.length,p=(T-s.s)/Math.max(.1,s.e-s.s);let acc=0;
- const html=s.text.split(' ').map(w=>{const st=acc/L;acc+=w.length+1;const en=acc/L;const on=p>=st-.02,cur=on&&p<en;
-  return `<span style="color:${cur?'#D4FF3F':'#fff'};opacity:${on?1:.42}">${w}</span>`}).join(' ');
+ let html;
+ if(s.words){html=s.words.map((w,k)=>{const nx=s.words[k+1],on=T>=w.s-.04,cur=on&&T<(nx?nx.s-.04:w.e+.15);
+  return `<span style="color:${cur?'#D4FF3F':'#fff'};opacity:${on?1:.42}">${w.w}</span>`}).join(' ')}
+ else{const L=s.text.length,p=(T-s.s)/Math.max(.1,s.e-s.s);let acc=0;
+ html=s.text.split(' ').map(w=>{const st=acc/L;acc+=w.length+1;const en=acc/L;const on=p>=st-.02,cur=on&&p<en;
+  return `<span style="color:${cur?'#D4FF3F':'#fff'};opacity:${on?1:.42}">${w}</span>`}).join(' ')}
  const e=eo(P(T,s.s-.05,s.s+.12));
  return `<div class="sub" style="opacity:${e};transform:translateY(${(1-e)*18}px)"><span>${html}</span></div>`}
 

@@ -136,8 +136,8 @@ with wave.open(f'{ROOT}/voice/voice.wav') as w:
 v = np.pad(v, (0, max(0, N - len(v))))[:N]
 # лёгкая «радийная» обработка: срез НЧ, присутствие, компрессия
 v = highpass(v, 90)
-pres = highpass(lowpass(v, 5000), 2000); v = v + 0.35 * pres
-v = np.tanh(v * 2.2) / np.tanh(2.2)
+pres = highpass(lowpass(v, 5000), 2000); v = v + 0.12 * pres
+v = np.tanh(v * 1.3) / np.tanh(1.3)   # студийный голос — обработка мягкая
 envv = lowpass(np.abs(v), 6); envv = envv / (envv.max() + 1e-9)
 duck = 1 - 0.55 * np.clip(envv * 4, 0, 1)   # до −7 дБ под голосом
 if NO_VOICE: duck = np.ones(N); v = v * 0
