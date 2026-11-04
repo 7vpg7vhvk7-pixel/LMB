@@ -129,6 +129,8 @@ for a, b_ in [(S(0, 0), S(0, .5)), (S(1, 1), S(1, 1.8)), (S(6, .1), S(6, .5)), (
     while t < b_: add(key(), t, 0.06 + rng.uniform(0, .03), rng.uniform(-.5, .5)); t += 0.045 + rng.uniform(0, .03)
 
 # ===== голос + ducking =====
+import os
+NO_VOICE = os.environ.get('NO_VOICE') == '1'   # версия без озвучки: музыка + субтитры
 with wave.open(f'{ROOT}/voice/voice.wav') as w:
     v = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768
 v = np.pad(v, (0, max(0, N - len(v))))[:N]
@@ -138,6 +140,7 @@ pres = highpass(lowpass(v, 5000), 2000); v = v + 0.35 * pres
 v = np.tanh(v * 2.2) / np.tanh(2.2)
 envv = lowpass(np.abs(v), 6); envv = envv / (envv.max() + 1e-9)
 duck = 1 - 0.55 * np.clip(envv * 4, 0, 1)   # до −7 дБ под голосом
+if NO_VOICE: duck = np.ones(N); v = v * 0
 ML *= duck; MR *= duck
 L += ML + v * 0.95; R += MR + v * 0.95
 
