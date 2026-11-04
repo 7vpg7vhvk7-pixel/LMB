@@ -1,4 +1,4 @@
-"""Озвучка (RHVoice, yuriy) -> общий voice.wav + timeline.json/timeline.js.
+"""Озвучка (Piper ruslan по умолчанию, запасной вариант RHVoice) -> общий voice.wav + timeline.json/timeline.js.
 Каждая строка lines.txt = одна сцена. Внутри строки фраза бьётся на куски по знакам препинания,
 время кусков берётся по паузам в синтезированной речи (для субтитров)."""
 import json, re, subprocess, sys, wave
@@ -12,9 +12,17 @@ MIN = {2: 3.2, 10: 5.6}           # минимальная длина сцен (
 # что показывать в субтитрах вместо «фонетического» текста
 DISPLAY = {'Лав Май Бади': 'Love My Body', 'АТФ': 'АТФ'}
 
+import os
+ENGINE = os.environ.get('TTS_ENGINE', 'piper')
+PIPER_MODEL = os.environ.get('PIPER_MODEL', '')   # путь к ru_RU-ruslan-medium.onnx (нейросетевой голос Piper)
+
 def tts(text):
     tmp = f'{HERE}/_tmp.wav'
-    subprocess.run(['RHVoice-test', '-p', VOICE, '-q', 'max', '-r', RATE, '-t', PITCH, '-o', tmp], input=text.encode(), capture_output=True)
+    if ENGINE == 'piper':
+        subprocess.run([sys.executable, '-m', 'piper', '-m', PIPER_MODEL, '-f', tmp, '--length-scale', '0.87',
+                        '--noise-scale', '0.75', '--noise-w-scale', '0.9'], input=text.encode(), capture_output=True)
+    else:
+        subprocess.run(['RHVoice-test', '-p', VOICE, '-q', 'max', '-r', RATE, '-t', PITCH, '-o', tmp], input=text.encode(), capture_output=True)
     raw = subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-i', tmp, '-ac', '1', '-ar', str(SR), '-f', 'f32le', '-'],
                          capture_output=True).stdout
     return np.frombuffer(raw, np.float32).copy()
