@@ -33,7 +33,10 @@ svg.L{position:absolute;left:0;top:0}
 .cap span{background:rgba(5,6,8,.72);padding:4px 10px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 .cur{display:inline-block;width:.6em;height:1em;background:var(--lime);vertical-align:-.12em;margin-left:4px}
 .over{position:absolute;inset:0;pointer-events:none}
+.sub{position:absolute;left:70px;right:70px;top:1628px;z-index:35;text-align:center;font-family:Manrope;font-weight:800;font-size:35px;line-height:1.38;color:#fff}
+.sub>span{background:rgba(5,6,8,.8);padding:5px 14px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 </style></head><body><div id="stage"></div>
+<script src="timeline.js"></script>
 <script>
 // ===== утилиты =====
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
@@ -47,10 +50,10 @@ const fr=x=>x-Math.floor(x);
 const H=k=>fr(Math.sin(k*12.9898+78.233)*43758.5453);
 const pad=(n,l=2)=>String(Math.floor(n)).padStart(l,'0');
 
-const SC=[[0,5],[5,11],[11,19],[19,25],[25,31],[31,37],[37,45],[45,53],[53,56.5],[56.5,60]];
-const NAMES=['НЕТ СИЛ','КРОВОТОК','МИТОХОНДРИИ','СТРЕСС','МИТО-ПАСПОРТ','ЗАБОР КРОВИ','МИКРОСКОП','ОТЧЁТ','ПЛАН','LOVE MY BODY'];
-const TOPS=['СКАНИРОВАНИЕ · ОРГАНИЗМ · ЭНЕРГИЯ','ГЛУБИНА ▸ КРОВОТОК · СКОРОСТЬ 0.3 М/С','ОБЪЕКТИВ ×1000 · КЛЕТКА · ЭНЕРГООБМЕН','ВНИМАНИЕ · СВОБОДНЫЕ РАДИКАЛЫ · ВОСПАЛЕНИЕ','MITO-ID · ИММУНИТЕТ × ЭНЕРГИЯ','ЗАБОР ОБРАЗЦА · 1 ПРОБИРКА · 5 МИНУТ','ЛАБОРАТОРИЯ · МАЗОК КРОВИ · ×1000','РЕЗУЛЬТАТ · РАЗБОР С ВРАЧОМ','ПЕРСОНАЛЬНЫЙ ПОДХОД','КОНЕЦ ЗАПИСИ · LOVE MY BODY'];
-const SHAKES=[[25+1.6,.9],[31+.1,.4],[56.5+.05,.6],[19+.2,.5],[37+.05,.3],[45+.5,.5]];
+const SC=TL.scenes,TOT=TL.total;
+const NAMES=['ПРИВЕТ','НЕТ СИЛ','КРОВОТОК','МИТОХОНДРИИ','СТРЕСС','МИТО-ПАСПОРТ','ЗАБОР КРОВИ','МИКРОСКОП','ОТЧЁТ','ПЛАН','LOVE MY BODY'];
+const TOPS=['LOVE MY BODY · ВЫПУСК 01 · МИТО-ПАСПОРТ','СКАНИРОВАНИЕ · ОРГАНИЗМ · ЭНЕРГИЯ','ГЛУБИНА ▸ КРОВОТОК · СКОРОСТЬ 0.3 М/С','ОБЪЕКТИВ ×1000 · КЛЕТКА · ЭНЕРГООБМЕН','ВНИМАНИЕ · СВОБОДНЫЕ РАДИКАЛЫ · ВОСПАЛЕНИЕ','MITO-ID · ИММУНИТЕТ × ЭНЕРГИЯ','ЗАБОР ОБРАЗЦА · 1 ПРОБИРКА · 5 МИНУТ','ЛАБОРАТОРИЯ · МАЗОК КРОВИ · ×1000','РЕЗУЛЬТАТ · РАЗБОР С ВРАЧОМ','ПЕРСОНАЛЬНЫЙ ПОДХОД','КОНЕЦ ЗАПИСИ · LOVE MY BODY'];
+const SHAKES=[[SC[5][0]+1.6,.9],[SC[6][0]+.1,.4],[SC[10][0]+.05,.6],[SC[4][0]+.2,.5],[SC[7][0]+.05,.3],[SC[8][0]+.5,.5],[SC[0][0]+0.6,.25]];
 
 // ===== текстовые эффекты =====
 function W(txt,size,p,extra=''){
@@ -127,17 +130,17 @@ function gauge(cx,cy,r,p,col,label,val,rot=0){return `<g><circle cx="${cx}" cy="
 
 // ===== HUD =====
 function hud(i,T,col='#D4FF3F'){
- const rem=Math.max(0,60-T),fn=Math.floor(T*30);
+ const rem=Math.max(0,TOT-T),fn=Math.floor(T*30),rs=Math.ceil(rem-.001);
  const ticks=Array.from({length:61},(_,k)=>`<line x1="${70+k*15.67}" y1="${k%5?1818:1808}" x2="${70+k*15.67}" y2="1828" stroke="rgba(255,255,255,${k%5?.25:.5})" stroke-width="2"/>`).join('');
  const r=52,cx=966,cy=232;
  const ring=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(0,0,0,.4)" stroke="rgba(255,255,255,.18)" stroke-width="3"/>
-  <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${2*Math.PI*r*rem/60} 9999" transform="rotate(-90 ${cx} ${cy})" style="filter:drop-shadow(0 0 10px ${col})"/>
+  <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${2*Math.PI*r*rem/TOT} 9999" transform="rotate(-90 ${cx} ${cy})" style="filter:drop-shadow(0 0 10px ${col})"/>
   ${Array.from({length:24},(_,k)=>{const a=k/24*6.283;return `<line x1="${cx+Math.cos(a)*(r+12)}" y1="${cy+Math.sin(a)*(r+12)}" x2="${cx+Math.cos(a)*(r+(k%6?18:26))}" y2="${cy+Math.sin(a)*(r+(k%6?18:26))}" stroke="rgba(255,255,255,.4)" stroke-width="2"/>`}).join('')}`;
  const cross=(x,y)=>`<g transform="translate(${x},${y})" stroke="rgba(255,255,255,.7)" stroke-width="2.5" fill="none"><circle r="16"/><line x1="-28" y1="0" x2="-8" y2="0"/><line x1="8" y1="0" x2="28" y2="0"/><line x1="0" y1="-28" x2="0" y2="-8"/><line x1="0" y1="8" x2="0" y2="28"/><circle r="3" fill="#fff"/></g>`;
  const corner=(x,y,sx,sy)=>`<path d="M${x} ${y+sy*44} L${x} ${y} L${x+sx*44} ${y}" stroke="rgba(255,255,255,.55)" stroke-width="3" fill="none"/>`;
  const c1x=150+Math.sin(T*.7)*40+H(i)*700,c1y=900+Math.cos(T*.5)*120+H(i+3)*500;
  const blinkRec=Math.floor(T*2)%2===0;
- const prog=T/60*940;
+ const prog=T/TOT*940;
  return `<div class="hud"><svg class="L" width="1080" height="1920">
   ${corner(40,40,1,1)}${corner(1040,40,-1,1)}${corner(40,1880,1,-1)}${corner(1040,1880,-1,-1)}
   <line x1="70" y1="1818" x2="1010" y2="1818" stroke="rgba(255,255,255,.22)" stroke-width="2"/>${ticks}
@@ -147,10 +150,10 @@ function hud(i,T,col='#D4FF3F'){
  </svg>
  <div class="p" style="left:70px;top:72px"><span class="dot" style="opacity:${blinkRec?1:.25}"></span>ЗАП 00:00:${pad(T)}:${pad(fn%30)}</div>
  <div class="p" style="left:0;right:0;top:124px;text-align:center;font-size:18px;opacity:.75">${TOPS[i]}</div>
- <div class="p" style="left:922px;top:216px;width:88px;text-align:center;font-size:24px;color:#fff;font-weight:800">00:${pad(Math.ceil(rem-.001))}</div>
+ <div class="p" style="left:922px;top:216px;width:88px;text-align:center;font-size:24px;color:#fff;font-weight:800">${pad(Math.floor(rs/60))}:${pad(rs%60)}</div>
  <div class="p" style="left:910px;top:300px;width:112px;text-align:center;font-size:15px">осталось</div>
- <div class="p" style="right:70px;top:74px">КАДР ${pad(fn,4)} / 1800</div>
- <div class="p" style="left:70px;top:1748px">${pad(i+1)} / 10 — ${NAMES[i]}</div>
+ <div class="p" style="right:70px;top:74px">КАДР ${pad(fn,4)} / ${Math.round(TOT*30)}</div>
+ <div class="p" style="left:70px;top:1748px">${pad(i+1)} / 11 — ${NAMES[i]}</div>
  <div class="p" style="right:70px;top:1748px">1080 × 1920 · 30 К/С</div>
  <div class="p" style="left:70px;top:1846px;font-size:17px;opacity:.6">LOVE MY BODY · INTEGRATIVE CLINIC</div>
  <div class="p" style="right:70px;top:1846px;font-size:17px;opacity:.6">СЕРИЯ MITO-ID</div></div>`}
@@ -174,8 +177,7 @@ S[1]=(t,d)=>{let s='';for(let k=0;k<26;k++){const sp=.5+H(k+5)*1.2,y=fr(H(k+11)+
  ${CHIP('<em>●</em> RBC · 7.5µm','',t,2.0,'left:700px;top:790px')}
  <div class="T" style="top:370px">${W('Заходим',130,P(t,.15,.7))}</div>
  <div class="T" style="top:530px">${BR('внутрь',130,P(t,.55,1.2))}</div>
- <div class="T" style="top:1420px">${W('клетки',130,P(t,1.0,1.5))}</div>
- ${CAP('Внутри вас — триллионы клеток',t,2.4,1.2)}`};
+ <div class="T" style="top:1420px">${W('клетки',130,P(t,1.0,1.5))}</div>`};
 
 function cellScene(t,red,appear){const cx=540,cy=1080,ap=appear?eo(P(t,0,1)):1;
  const m=[[-170,-190,.95,-22],[150,-200,.62,28],[-210,170,.7,32],[200,250,.55,-35]];
@@ -190,8 +192,7 @@ S[2]=(t)=>{const {cx,cy,ap,ms}=cellScene(t,0,1);const atp=Math.round(96*eo(P(t,2
  ${CHIP(`<em>АТФ ▲</em> ВЫРАБОТКА ${atp}%`,'',t,2.7,'left:60px;top:1540px')}
  ${CHIP('<em>NUC</em> · ЯДРО','',t,3.4,'left:760px;top:1450px')}
  <div class="T" style="top:340px">${W('Митохондрии',84,P(t,.3,.9))}</div>
- <div class="T" style="top:460px">${BLK('электростанции клетки',52,P(t,.9,1.4))}</div>
- ${CAP('Производят АТФ — энергию для мозга, сердца и иммунитета',t,4.2,2.2)}`};
+ <div class="T" style="top:460px">${BLK('электростанции клетки',52,P(t,.9,1.4))}</div>`};
 
 S[3]=(t)=>{const {cx,cy,ms}=cellScene(t,1,0);const p=eo(P(t,0,1.2));const atp=Math.round(lerp(96,23,eio(P(t,.8,2.8))));
  let r='';for(let k=0;k<34;k++){const a=H(k+50)*6.283,f=fr(t*.55+H(k+60)),dd=1000-f*590,x=cx+Math.cos(a)*dd,y=cy+Math.sin(a)*dd;
@@ -207,8 +208,7 @@ S[3]=(t)=>{const {cx,cy,ms}=cellScene(t,1,0);const p=eo(P(t,0,1.2));const atp=Ma
  ${CHIP(`<em style="color:#FF3B4E;opacity:${blink}">⚠ </em>ОКСИДАТИВНЫЙ СТРЕСС`,'',t,1.0,'left:60px;top:640px',1)}
  ${CHIP(`<em style="color:#FF3B4E">АТФ ▼</em> ${atp}%`,'',t,.9,'left:700px;top:1450px',1)}
  <div class="T" style="top:340px">${W('Энергии —',100,P(t,.3,.85))}</div>
- <div class="T" style="top:470px">${BR('меньше',100,P(t,.75,1.4),1)}</div>
- ${CAP('Стресс и воспаление снижают выработку энергии — организм подаёт сигналы',t,2.4,2.4)}`};
+ <div class="T" style="top:470px">${BR('меньше',100,P(t,.75,1.4),1)}</div>`};
 
 S[4]=(t)=>{const rings=[520,430,340].map((r,k)=>`<circle cx="540" cy="1000" r="${r}" fill="none" stroke="rgba(212,255,63,${.12+k*.08})" stroke-width="2" stroke-dasharray="${k==1?'4 14':'60 20'}" stroke-dashoffset="${t*(k%2?30:-40)}" opacity="${P(t,.1+k*.15,.6+k*.15)}"/>`).join('');
  let pulses='';for(let k=0;k<3;k++){const f=fr(t*.45+k/3);pulses+=`<circle cx="540" cy="1000" r="${200+f*480}" fill="none" stroke="#D4FF3F" stroke-width="3" opacity="${(1-f)*.35}"/>`}
@@ -219,10 +219,9 @@ S[4]=(t)=>{const rings=[520,430,340].map((r,k)=>`<circle cx="540" cy="1000" r="$
  <img src="logo.png" style="position:absolute;z-index:6;left:290px;top:300px;width:500px;opacity:${lp*.92};filter:blur(${(1-lp)*14}px);transform:scale(${1.1-.1*lp})">
  <div class="T" style="top:470px">${W('Иммуно-',92,P(t,.7,1.2))}</div>
  <div class="T" style="top:575px">${W('митохондриальный',58,P(t,1.0,1.5))}</div>
- <div class="T" style="top:1300px">${BLK('паспорт',150,P(t,1.6,2.1))}</div>
- ${CAP('Анализ энергии клеток и врождённого иммунитета',t,2.6,1.6)}`};
+ <div class="T" style="top:1300px">${BLK('паспорт',150,P(t,1.6,2.1))}</div>`};
 
-S[5]=(t)=>{const enter=eo(P(t,0,.9)),exit=eio(P(t,5.2,6));
+S[5]=(t,d)=>{const enter=eo(P(t,0,.9)),exit=eio(P(t,d-.8,d));
  const lvl=560*eo(P(t,.6,2.6)),ytop=440-lvl;
  let c='';for(let k=0;k<9;k++){const y=-60+k*60+Math.sin(t*1.5+k)*10+140;if(y-30>ytop)c+=rbc(-40+H(k+3)*80+Math.sin(t+k)*8,y,26+H(k)*12,H(k+1)*360+t*30);}
  const lab=eb(P(t,2.2,2.6));
@@ -244,10 +243,9 @@ S[5]=(t)=>{const enter=eo(P(t,0,.9)),exit=eio(P(t,5.2,6));
  <div class="T" style="top:330px"><span class="m" style="font-size:30px;color:var(--lime);opacity:${P(t,.1,.4)}">${TY('шаг 01',P(t,.1,.5))}</span></div>
  <div class="T" style="top:380px">${W('Кровь',150,P(t,.25,.8))}</div>
  <div class="T" style="top:550px">${W('из вены',86,P(t,.6,1.1))}</div>
- <div class="T" style="top:1500px">${BLK('→ в лабораторию',54,P(t,3.0,3.5))}</div>
- ${CAP('Обычный анализ крови из вены',t,3.8,1.2)}`};
+ <div class="T" style="top:1500px">${BLK('→ в лабораторию',54,P(t,3.0,3.5))}</div>`};
 
-S[6]=(t)=>{const cx=540,cy=1060,R=350,ap=eo(P(t,0,.7)),foc=(1-eo(P(t,.4,1.6)))*12;
+S[6]=(t)=>{const cx=540,cy=1000,R=330,ap=eo(P(t,0,.7)),foc=(1-eo(P(t,.4,1.6)))*12;
  let g='';[[-140,-110,95],[130,-50,84],[-60,160,90],[175,195,70],[-235,95,60],[40,-250,62]].forEach((q,k)=>g+=granulo(q[0]+Math.sin(t*.4+k)*5,q[1]+Math.cos(t*.3+k)*5,q[2],k*17+3));
  let rb='';for(let k=0;k<14;k++)rb+=rbc(-300+H(k+200)*600+Math.sin(t*.3+k)*6,-300+H(k+300)*600,32+H(k+400)*18,H(k+500)*360,null,.5);
  const sf=fr((t-1)/2.4),sy=cy-R+sf*2*R;
@@ -270,9 +268,9 @@ S[6]=(t)=>{const cx=540,cy=1060,R=350,ap=eo(P(t,0,.7)),foc=(1-eo(P(t,.4,1.6)))*1
  <div class="T" style="top:300px"><span class="m" style="font-size:28px;color:var(--lime)">${TY('шаг 02 · ваши иммунные клетки',P(t,.1,.9))}</span></div>
  <div class="T" style="top:350px">${W('Под',100,P(t,.2,.7))}</div>
  <div class="T" style="top:470px">${BR('микроскопом',74,P(t,.5,1.1))}</div>
- <div style="position:absolute;left:90px;right:90px;top:1480px;z-index:6;border:2px solid rgba(255,255,255,.25);background:rgba(6,8,10,.8);padding:20px 30px;opacity:${P(t,2.5,2.8)};transform:translateY(${(1-eo(P(t,2.5,3)))*60}px)">
+ <div style="position:absolute;left:90px;right:90px;top:1400px;z-index:6;border:2px solid rgba(255,255,255,.25);background:rgba(6,8,10,.8);padding:14px 30px;opacity:${P(t,2.5,2.8)};transform:translateY(${(1-eo(P(t,2.5,3)))*60}px)">
   ${rows.map((r,k)=>{const a=2.8+k*.4,p=P(t,a,a+.6);const val=r[1]<0?(t>a?'АНАЛИЗ'+dots:''):(t>a?pad(r[1]*eo(p))+'%':'');
-   return `<div class="m" style="display:flex;justify-content:space-between;font-size:27px;line-height:1.6;opacity:${t>a?1:.25}"><span style="color:rgba(255,255,255,.8)">${r[0]}</span><span style="flex:1;border-bottom:2px dotted rgba(255,255,255,.2);margin:0 16px 14px"></span><span style="color:${r[2]}">${val}</span></div>`}).join('')}
+   return `<div class="m" style="display:flex;justify-content:space-between;font-size:24px;line-height:1.5;opacity:${t>a?1:.25}"><span style="color:rgba(255,255,255,.8)">${r[0]}</span><span style="flex:1;border-bottom:2px dotted rgba(255,255,255,.2);margin:0 16px 14px"></span><span style="color:${r[2]}">${val}</span></div>`}).join('')}
  </div>`};
 
 S[7]=(t)=>{const rows=[['Митохондриальная активность',.30,'норма','#D4FF3F'],['Белковый обмен',.68,'норма','#D4FF3F'],['Оксидативный стресс',.85,'внимание','#FF3B4E'],['NADH',.52,'погранично','#FFB547']];
@@ -290,7 +288,7 @@ S[7]=(t)=>{const rows=[['Митохондриальная активность',
    <text x="${x}" y="112" text-anchor="middle" font-family="JetBrains Mono" font-weight="800" font-size="26" fill="#fff" opacity="${pp}">${(c[1]*pp).toFixed(1).replace('-0.0','0').replace('.0','')}%</text>
    <text x="${x}" y="170" text-anchor="middle" font-family="Unbounded" font-weight="800" font-size="24" fill="rgba(255,255,255,.7)">${c[0]}</text>`}).join('')}</svg>
  </div>
- <div class="T" style="top:1620px"><span class="sm" style="font-size:38px">${TY('разбор с врачом + ваши симптомы',P(t,4.2,5.4)).replace('с врачом','<span style="color:var(--lime)">с врачом</span>')}</span></div>`};
+ <div class="T" style="top:1545px"><span class="sm" style="font-size:34px">${TY('разбор с врачом + ваши симптомы',P(t,4.2,5.4)).replace('с врачом','<span style="color:var(--lime)">с врачом</span>')}</span></div>`};
 
 S[8]=(t)=>{const v=lerp(12,100,eio(P(t,.3,2.6))),col=v<35?'#FF3B4E':v<65?'#FFB547':'#D4FF3F';
  return `<svg class="L" width="1080" height="1920">${DEFS}${dust(60,'#D4FF3F',t,9,2,-30)}
@@ -299,8 +297,7 @@ S[8]=(t)=>{const v=lerp(12,100,eio(P(t,.3,2.6))),col=v<35?'#FF3B4E':v<65?'#FFB54
  ${mito(540,1020+Math.sin(t*1.5)*10,1.1,-18+Math.sin(t)*4,v<40,1)}${sparksA(540,1020,Math.round(6+v/100*26),300,t,12,.6,lerp(.6,1.3,v/100))}
  <text x="540" y="1420" text-anchor="middle" font-family="JetBrains Mono" font-weight="800" font-size="58" fill="#fff">ЭНЕРГИЯ ${Math.round(v)}%</text></svg>
  <div class="T" style="top:340px">${W('Персональный',76,P(t,.1,.6))}</div>
- <div class="T" style="top:450px">${BLK('план',120,P(t,.45,.95))}</div>
- ${CAP('Врач видит картину на клеточном уровне и подбирает поддержку под вас',t,1.0,2.0)}`};
+ <div class="T" style="top:450px">${BLK('план',120,P(t,.45,.95))}</div>`};
 
 S[9]=(t)=>{const lp=eo(P(t,.1,.9));
  return `<div class="over" style="background:radial-gradient(80% 50% at 50% 42%,#15180f 0%,#07080a 60%,#020203 100%)"></div>
@@ -316,9 +313,33 @@ S[9]=(t)=>{const lp=eo(P(t,.1,.9));
  <div class="T" style="top:1525px"><span class="m" style="font-size:28px;opacity:.85">${TY('@lovemybody.clinic',P(t,1.7,2.3))}</span></div>
  <div style="position:absolute;left:90px;right:90px;top:1600px;z-index:6;text-align:center;font-size:19px;line-height:1.4;color:rgba(255,255,255,.45);opacity:${P(t,1.9,2.4)}">Исследование не является самостоятельным методом диагностики. Результаты оценивает врач. Имеются противопоказания, необходима консультация специалиста.</div>`};
 
+// ===== сцена 0: приветствие =====
+const INTRO=(t,d)=>{const C=TL.subs.filter(x=>x.scene===0).map(x=>x.s-SC[0][0]);
+ const lp=eo(P(t,C[1]+.25,C[1]+1.1)),sx=P(t,C[1]+.2,C[1]+1.0);
+ let bg='';[[150,420,140,20,'b30',.35],[960,700,110,-30,'b16',.3],[880,1500,170,40,'b30',.35],[120,1350,90,10,'b16',.3]].forEach((c,k)=>bg+=rbc(c[0]+Math.sin(t*.5+k)*25,c[1]-t*(10+k*4),c[2],c[3]+t*4,c[4],c[5]));
+ const rings=[460,380,300].map((r,k)=>`<circle cx="540" cy="900" r="${r}" fill="none" stroke="rgba(212,255,63,${.07+k*.05})" stroke-width="2" stroke-dasharray="${k==1?'4 14':'80 24'}" stroke-dashoffset="${t*(k%2?25:-35)}"/>`).join('');
+ return `<svg class="L" width="1080" height="1920">${DEFS}${bg}${dust(90,'#fff',t,21,2.5)}${rings}
+ <circle cx="540" cy="900" r="300" fill="#D4FF3F" opacity="${.05*lp}" filter="url(#b30)"/></svg>
+ <div class="T" style="top:330px"><span class="m" style="font-size:28px;color:var(--lime)">${TY('● в эфире',P(t,0,.5))}</span></div>
+ <div class="T" style="top:400px">${W('Всем привет!',92,P(t,C[0]-.15,C[0]+.4))}</div>
+ <div class="T" style="top:640px"><span class="sm" style="font-size:40px;opacity:${P(t,C[1]-.1,C[1]+.2)}">${TY('на связи клиника',P(t,C[1]-.1,C[1]+.6))}</span></div>
+ <img src="logo.png" style="position:absolute;z-index:6;left:110px;top:760px;width:860px;opacity:${lp};filter:blur(${(1-lp)*16}px);transform:scale(${1.1-.1*lp})">
+ ${sx>0&&sx<1?`<div style="position:absolute;z-index:7;top:740px;height:260px;left:${110+sx*860}px;width:6px;background:#D4FF3F;box-shadow:0 0 30px #D4FF3F,0 0 60px #D4FF3F"></div>`:''}
+ <div class="T" style="top:1150px"><span class="sm" style="font-size:40px;opacity:${P(t,C[2]-.1,C[2]+.2)}">${TY('сегодня расскажем',P(t,C[2]-.1,C[2]+.6))}</span></div>
+ <div class="T" style="top:1240px">${BLK('что такое мито-паспорт',56,P(t,C[3]-.1,C[3]+.35))}</div>
+ <div class="T" style="top:1400px">${BR('и для чего он нужен',54,P(t,C[4]-.1,C[4]+.5))}</div>`};
+S.unshift(INTRO);
+
 // ===== зерно =====
 const GR=[];(function(){for(let g=0;g<4;g++){const c=document.createElement('canvas');c.width=540;c.height=960;const x=c.getContext('2d');const im=x.createImageData(540,960);
  for(let k=0;k<im.data.length;k+=4){const v=Math.random()*255;im.data[k]=im.data[k+1]=im.data[k+2]=v;im.data[k+3]=255}x.putImageData(im,0,0);GR.push(c.toDataURL())}})();
+
+function SUBS(T,i){if(i===0||i===10)return '';const s=TL.subs.find(x=>x.scene===i&&T>=x.s-.05&&T<x.e+.2);if(!s)return '';
+ const L=s.text.length,p=(T-s.s)/Math.max(.1,s.e-s.s);let acc=0;
+ const html=s.text.split(' ').map(w=>{const st=acc/L;acc+=w.length+1;const en=acc/L;const on=p>=st-.02,cur=on&&p<en;
+  return `<span style="color:${cur?'#D4FF3F':'#fff'};opacity:${on?1:.42}">${w}</span>`}).join(' ');
+ const e=eo(P(T,s.s-.05,s.s+.12));
+ return `<div class="sub" style="opacity:${e};transform:translateY(${(1-e)*18}px)"><span>${html}</span></div>`}
 
 // ===== рендер =====
 const stage=document.getElementById('stage');
@@ -327,25 +348,26 @@ window.render=function(T){
  const [a,b]=SC[i],t=T-a,d=b-a;
  // камера
  let sc=1+.045*(t/d),bl=0,sx=0,sy=0,rot=0;
- if(i===0){const z=P(t,4.35,5);sc+=z*z*1.6;bl+=z*z*14}
- if(i===1){const z=P(t,5.45,6);sc+=z*z*1.4;bl+=z*z*12}
- if(i===3){sx+=Math.sin(T*47)*3;sy+=Math.cos(T*53)*3}
+ if(i===1){const z=P(t,d-.65,d);sc+=z*z*1.6;bl+=z*z*14}
+ if(i===2){const z=P(t,d-.55,d);sc+=z*z*1.4;bl+=z*z*12}
+ if(i===4){sx+=Math.sin(T*47)*3;sy+=Math.cos(T*53)*3}
  SHAKES.forEach(([st,am])=>{const k=T-st;if(k>=0&&k<.5){const e=Math.pow(1-k/.5,2)*am;sx+=Math.sin(k*90)*28*e;sy+=Math.cos(k*77)*22*e;rot+=Math.sin(k*60)*1.2*e}});
  // переходы
  let fl=0,gl=0;SC.forEach((s,k)=>{if(k===0)return;const dt=T-s[0];if(dt>-.12&&dt<.4){const f=dt<0?(dt+.12)/.12:1-dt/.4;fl=Math.max(fl,f);gl=Math.max(gl,f)}});
  bl+=fl*9;sc+=fl*.06;
- const col=i===3?'#FF3B4E':'#D4FF3F';
+ const col=i===4?'#FF3B4E':'#D4FF3F';
  let bars='';if(gl>.05){for(let k=0;k<7;k++){const y=H(k+Math.floor(T*30))*1920,h=6+H(k*3+Math.floor(T*30))*60;bars+=`<div style="position:absolute;left:0;right:0;top:${y}px;height:${h}px;background:${k%3?col:'#fff'};opacity:${gl*.55};mix-blend-mode:screen;transform:translateX(${(H(k*7+T)-.5)*200}px)"></div>`}}
  const fade=i===9?0:0;
  stage.innerHTML=`<div class="cam" style="transform:translate(${sx}px,${sy}px) scale(${sc}) rotate(${rot}deg);filter:${bl>.05?`blur(${bl.toFixed(2)}px)`:'none'} ${fl>0?`brightness(${1+fl*.8})`:''}">
   <div class="F">${S[i](t,d)}</div></div>
   ${hud(i,T,col)}
+  ${SUBS(T,i)}
   <div class="over" style="background:radial-gradient(120% 75% at 50% 50%,transparent 55%,rgba(0,0,0,.7) 100%);z-index:40"></div>
   <div class="over" style="z-index:41;background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 2px,transparent 2px 5px)"></div>
   <img class="over" src="${GR[Math.floor(T*30)%4]}" style="width:1080px;height:1920px;z-index:42;opacity:.09;mix-blend-mode:overlay">
   <div class="over" style="z-index:43">${bars}</div>
   <div class="over" style="z-index:44;background:#fff;opacity:${fl*.55}"></div>
-  <div class="over" style="z-index:45;background:#000;opacity:${clamp(1-T/.35)}"></div>`;
+  <div class="over" style="z-index:45;background:#000;opacity:${Math.max(clamp(1-T/.35),P(T,TOT-.45,TOT))}"></div>`;
 };
 window.render(+(new URLSearchParams(location.search).get('t')||2));
 </script></body></html>
